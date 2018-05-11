@@ -29,30 +29,38 @@ void setup() {
   lcd.setCursor(5,0);
   lcd.print("GrowSystem");
   lcd.setCursor(8,1);
-  lcd.print("v1.1");
+  lcd.print("v1.0");
   //Barra de carregamento (loading)
   lcd.setCursor(0,3);
   for(int i = 0; i < 20; i++){
     lcd.write(byte(0));
     delay(250);
   }
-  lcd.clear();
-  lcd.setCursor(5,0);
-  lcd.print("GrowSystem");
+  
 
-  //Ajusta o tempo do sistem que é mantido pela biblioteca Time
-  //horas, minutos, segundos, dia, mês, ano
-  setTime(00,9,10,11,5,2018);
-
-  //Atualiza data e hora no RTC
-  RTC.set( now() );
+  //Ajusta o tempo do sistema e atualiza no RTC
+  //Uma vez tendo ajustado o tempo no RTC, as duas linhas seguintes podem ser comentadas
+  /*setTime(00,9,10,11,5,2018);         //horas, minutos, segundos, dia, mês, ano
+   *RTC.set( now() );
+   */
 
   //Sincroniza a biblioteca Time com a data e hora do RTC
   setSyncProvider(RTC.get);
-  if (timeStatus() != timeSet) 
-     Serial.println("Unable to sync with the RTC");
-  else
-     Serial.println("RTC has set the system time");
+  if (timeStatus() != timeSet){
+    lcd.clear();
+    lcd.print("ERRO:");
+    lcd.setCursor(0,1);
+    lcd.print("Nao foi possivel");
+    lcd.setCursor(0,2);
+    lcd.print("sincronizar com RTC.");
+    lcd.setCursor(0,3);
+    lcd.print("Verifique o sistema.");
+  }
+  else{
+    lcd.clear();
+    lcd.setCursor(5,0);
+    lcd.print("GrowSystem");
+  }
 
   //Taxa de atualização da biblioteca Time com o RTC (segundos)
   setSyncInterval(1);
