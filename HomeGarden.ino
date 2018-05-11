@@ -20,22 +20,29 @@ const int rs = 0,
 // Instancia objeto do tipo LyquidCrystal
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
+byte block[8] = { B11111,B11111,B11111,B11111,B11111,B11111,B11111,B11111 };
 
 void setup() {
   // Escreve mensagem por 3 segundos no LCD, depois apaga
+  lcd.createChar(0, block);
   lcd.begin(20,4);
-  lcd.setCursor(5,1);
+  lcd.setCursor(5,0);
   lcd.print("GrowSystem");
-  lcd.setCursor(8,2);
+  lcd.setCursor(8,1);
   lcd.print("v1.1");
-  delay(3000);
+  //Barra de carregamento (loading)
+  lcd.setCursor(0,3);
+  for(int i = 0; i < 20; i++){
+    lcd.write(byte(0));
+    delay(250);
+  }
   lcd.clear();
   lcd.setCursor(5,0);
   lcd.print("GrowSystem");
 
   //Ajusta o tempo do sistem que é mantido pela biblioteca Time
   //horas, minutos, segundos, dia, mês, ano
-  setTime(23,36,50,10,5,2018);
+  setTime(00,9,10,11,5,2018);
 
   //Atualiza data e hora no RTC
   RTC.set( now() );
@@ -80,7 +87,7 @@ void loop(){
   //Imprime hora atual na segunda linha do LCD
   lcd.setCursor(0,2);
   lcd.print("Data: ");
-  lcd.print(weekDay[myTime.Wday]);
+  lcd.print(weekDay[weekday()-1]);
   lcd.print(", ");
 
   if(day() < 10)
