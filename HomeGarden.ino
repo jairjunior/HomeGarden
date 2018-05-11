@@ -23,20 +23,22 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 void setup() {
   // Escreve mensagem por 3 segundos no LCD, depois apaga
-  lcd.begin(16, 2);
-  lcd.setCursor(3,0);
+  lcd.begin(20,4);
+  lcd.setCursor(5,1);
   lcd.print("GrowSystem");
-  lcd.setCursor(6,1 );
+  lcd.setCursor(8,2);
   lcd.print("v1.1");
   delay(3000);
   lcd.clear();
+  lcd.setCursor(5,0);
+  lcd.print("GrowSystem");
 
   //Ajusta o tempo do sistem que é mantido pela biblioteca Time
   //horas, minutos, segundos, dia, mês, ano
-  //setTime(23,58,05,10,5,2018);
+  setTime(23,36,50,10,5,2018);
 
   //Atualiza data e hora no RTC
-  //RTC.set( now() );
+  RTC.set( now() );
 
   //Sincroniza a biblioteca Time com a data e hora do RTC
   setSyncProvider(RTC.get);
@@ -58,7 +60,8 @@ void loop(){
   breakTime(rtcTime, myTime);
   
   //Imprime hora atual na primeira linha do LCD
-  lcd.setCursor(4,0);
+  lcd.setCursor(0,1);
+  lcd.print("Hora: ");
   if(hour() < 10)
     lcd.print("0");
   lcd.print( hour() );
@@ -75,7 +78,8 @@ void loop(){
 
 
   //Imprime hora atual na segunda linha do LCD
-  lcd.setCursor(0,1);
+  lcd.setCursor(0,2);
+  lcd.print("Data: ");
   lcd.print(weekDay[myTime.Wday]);
   lcd.print(", ");
 
@@ -89,7 +93,7 @@ void loop(){
   lcd.print( month() );
   lcd.print(".");
 
-  lcd.print( year() );
+  lcd.print( year()-2000 );
 
   delay(1000);
   
