@@ -4,10 +4,12 @@
 #include <DS1307RTC.h>        //RTC DS1307
 #include <Wire.h>             //Interface I2C
 
-tmElements_t myTime;
-time_t rtcTime;
+#define PRINT_SECONDS         B00000001
+#define PRINT_TEXT_DATE       B00000010
+#define PRINT_TEXT_HOUR       B00000100
+#define DOT_SEPARATOR         B00001000
+#define DASH_SEPARATOR        B00010000
 
-const String weekDay[7] = {"Dom","Seg","Ter","Qua","Qui","Sex","Sab"};
 
 //Pins used with the LCD 
 const int rs = 0, 
@@ -22,8 +24,17 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 byte block[8] = { B11111,B11111,B11111,B11111,B11111,B11111,B11111,B11111 };
 
+
+
+/********************************************************************************
+ * 
+ * Função SETUP - Rod auma vez ao inicializar.
+ * Configura LCD, mostra mensagem e barra de inicialização
+ * Ajusta tempo do RTC vi software (opcional)
+ * Sincroniza biblioteca Time com periférico externo (RTC)
+ * 
+ *******************************************************************************/
 void setup() {
-  // Escreve mensagem por 3 segundos no LCD, depois apaga
   lcd.createChar(0, block);
   lcd.begin(20,4);
   lcd.setCursor(5,0);
@@ -40,22 +51,25 @@ void setup() {
 
   //Ajusta o tempo do sistema e atualiza no RTC
   //Uma vez tendo ajustado o tempo no RTC, as duas linhas seguintes podem ser comentadas
-  /*setTime(00,9,10,11,5,2018);         //horas, minutos, segundos, dia, mês, ano
-   *RTC.set( now() );
-   */
+  //setTime(10,29,0,11,5,2018);         //horas, minutos, segundos, dia, mês, ano
+  //RTC.set( now() );
+
 
   //Sincroniza a biblioteca Time com a data e hora do RTC
+  //Caso a sincronização tenha falhado, exibe mensagem de erro no LCD e trava execução
   setSyncProvider(RTC.get);
   if (timeStatus() != timeSet){
     lcd.clear();
-    lcd.print("ERRO:");
+    lcd.print("ERRO 743:");
     lcd.setCursor(0,1);
     lcd.print("Nao foi possivel");
     lcd.setCursor(0,2);
     lcd.print("sincronizar com RTC.");
     lcd.setCursor(0,3);
     lcd.print("Verifique o sistema.");
+    while(true){}
   }
+  //Se a sincronização ocorreu, escreve nome no LCD
   else{
     lcd.clear();
     lcd.setCursor(5,0);
@@ -63,7 +77,7 @@ void setup() {
   }
 
   //Taxa de atualização da biblioteca Time com o RTC (segundos)
-  setSyncInterval(1);
+  setSyncInterval(60);
 }
 
 
@@ -71,12 +85,20 @@ void setup() {
 
 void loop(){
 
-  rtcTime = RTC.get();
-  breakTime(rtcTime, myTime);
+  printDateAndHour(0,3, 0,2, PRINT_TEXT_DATE | PRINT_TEXT_HOUR | PRINT_SECONDS | DASH_SEPARATOR);
+  delay(1000);
   
+}
+
+
+
+void printDateAndHour(int dateCol, int dateRow, int hourCol, int hourRow, byte printConfigs ){
+const String weekDay[7] = {"Dom","Seg","Ter","Qua","Qui","Sex","Sab"};
+
   //Imprime hora atual na primeira linha do LCD
-  lcd.setCursor(0,1);
-  lcd.print("Hora: ");
+  lcd.setCursor(hourCol,hourRow);
+  if(printConfigs & PRINT_TEXT_HOUR)
+    lcd.print("Hora: ");
   if(hour() < 10)
     lcd.print("0");
   lcd.print( hour() );
@@ -87,29 +109,40 @@ void loop(){
   lcd.print( minute() );
   lcd.print(":");
 
-  if(second() < 10)
-    lcd.print("0");
-  lcd.print( second() );
-
+  if(printConfigs & PRINT_SECONDS){
+    if(second() < 10)
+      lcd.print("0");
+    lcd.print( second() );
+  }
 
   //Imprime hora atual na segunda linha do LCD
-  lcd.setCursor(0,2);
-  lcd.print("Data: ");
+  lcd.setCursor(dateCol,dateRow);
+  if(printConfigs & PRINT_TEXT_DATE)
+    lcd.print("Data: ");
   lcd.print(weekDay[weekday()-1]);
   lcd.print(", ");
 
   if(day() < 10)
     lcd.print("0");
   lcd.print( day() );
-  lcd.print(".");
-
+  printDateSeparator(printConfigs);
+  
   if(month() < 10)
     lcd.print("0");
   lcd.print( month() );
-  lcd.print(".");
+  printDateSeparator(printConfigs);
 
   lcd.print( year()-2000 );
-
-  delay(1000);
-  
 }
+
+
+
+void printDateSeparator(byte printConfigs){
+  if(printConfigs & DOT_SEPARATOR)
+    lcd.print(".");
+  else if(printConfigs & DASH_SEPARATOR)
+    lcd.print("-");
+  else
+    lcd.print("/");
+}
+
