@@ -1,15 +1,16 @@
 #include <PushButton.h>
-#include <LiquidCrystal.h>    //Display LCD alfanumérico 
+#include <LiquidCrystal.h>    //Display LCD alfanumérico
+#include <Wire.h>             //Interface I2C
 #include <Time.h>             //Tempo
 #include <TimeLib.h>          //Tempo
 #include <DS1307RTC.h>        //RTC DS1307
-#include <Wire.h>             //Interface I2C
 
 #define PRINT_SECONDS         B00000001
 #define PRINT_TEXT_DATE       B00000010
 #define PRINT_TEXT_HOUR       B00000100
 #define DOT_SEPARATOR         B00001000
 #define DASH_SEPARATOR        B00010000
+
 
 // Strings contendo nome e versão do projeto
 const String projectName = "GrowSystem";
@@ -33,7 +34,7 @@ PushButton downBtn(downBtnPin, 50, DEFAULT_STATE_HIGH);
 
 byte block[8] = { B11111,B11111,B11111,B11111,B11111,B11111,B11111,B11111 };
 
-
+String menuControl = "";
 
 /********************************************************************************
  * 
@@ -79,14 +80,12 @@ void setup(){
     lcd.print("Verifique o sistema.");
     while(true){}
   }
-  //Se a sincronização ocorreu, escreve nome do projeto no topo LCD
-  else{
-    lcd.clear();
-    printProjectName(5,0);
-  }
 
   //Taxa de atualização da biblioteca Time com o RTC (segundos)
   setSyncInterval(60);
+
+
+  lcd.clear();
 }
 
 
@@ -100,6 +99,12 @@ void setup(){
  *******************************************************************************/
 void loop(){
 unsigned long count = 0;
+
+  if( menuBtn.isPressed() ){
+    menuControl = mainMenu();
+    while( menuBtn.isPressed() );
+    Serial.println(menuControl);
+  }
 
   // Só atualiza LCD depois de 1 segundo
   // Não bloqueia execução do loop
@@ -118,6 +123,9 @@ unsigned long count = 0;
 void printDateAndHour(int dateCol, int dateRow, int hourCol, int hourRow, byte printConfigs ){
 const String weekDay[7] = {"Dom","Seg","Ter","Qua","Qui","Sex","Sab"};
 
+  //Imprime Nome do Projeto no topo, centralizado
+  printProjectName(5,0);
+  
   //Imprime hora atual na primeira linha do LCD
   lcd.setCursor(hourCol,hourRow);
   if(printConfigs & PRINT_TEXT_HOUR)
@@ -188,3 +196,122 @@ void printProjectVersion(int col, int row){
     lcd.setCursor(col,row);
     lcd.print(projectVersion);
 }
+
+/******************************************************************************
+ * 
+ *
+ *****************************************************************************/
+String mainMenu(){
+ int numberOfOptions = 6;
+ const String options[numberOfOptions] = {"Set Time", "Set Date", "Lights", "Watering", "Sensors", "Exit"};
+ const int lines = 3;
+ const char selector = '>';
+ int selectorPosition = 1;
+ int page = 0, lastPage = 1;
+ int maxPages = numberOfOptions - lines;
+ bool exitMenu = false;
+
+  while(!exitMenu){
+
+    //Verifica se houve mudança de página
+    if(page != lastPage){
+
+      lastPage = page;
+      
+      lcd.clear();
+      lcd.setCursor(8,0);
+      lcd.print("MENU");
+    
+      lcd.setCursor(2,1);
+      lcd.print(options[ (lines-3)+page ]);
+      
+      lcd.setCursor(2,2);
+      lcd.print(options[ (lines-2)+page ]);
+      
+      lcd.setCursor(2,3);
+      lcd.print(options[ (lines-1)+page ]);
+
+      if(selectorPosition == 1){
+        lcd.setCursor(1,1);
+        lcd.print(selector);
+      }
+      else if(selectorPosition == 2){
+        lcd.setCursor(1,2);
+        lcd.print(selector);
+      }
+      else if(selectorPosition == 3){
+        lcd.setCursor(1,3);
+        lcd.print(selector);
+      }
+
+      while(menuBtn.isPressed());
+      delay(800);
+    }
+
+    //Botão MENU
+    if( menuBtn.isPressed() ){
+      exitMenu = true;
+    }
+
+    //Botão UP
+    else if( upBtn.isPressed() ){
+      if(selectorPosition == 3){
+        lcd.setCursor(1,3);
+        lcd.print(" ");
+        lcd.setCursor(1,2);
+        lcd.print(selector);
+        selectorPosition = 2;
+        delay(800);
+      }
+      else if(selectorPosition == 2){
+        lcd.setCursor(1,2);
+        lcd.print(" ");
+        lcd.setCursor(1,1);
+        lcd.print(selector);
+        selectorPosition = 1;
+        delay(800);
+      }
+      else if(selectorPosition == 1){
+        if(page > 0)
+          page--;
+        else{
+          page = maxPages;
+          selectorPosition = 3;
+        }
+      }
+    }
+
+    //Botão DOWN
+    else if( downBtn.isPressed() ){
+      if(selectorPosition == 1){
+        lcd.setCursor(1,1);
+        lcd.print(" ");
+        lcd.setCursor(1,2);
+        lcd.print(selector);
+        selectorPosition = 2;
+        delay(800);
+      }
+      else if(selectorPosition == 2){
+        lcd.setCursor(1,2);
+        lcd.print(" ");
+        lcd.setCursor(1,3);
+        lcd.print(selector);
+        selectorPosition = 3;
+        delay(800);
+      }
+      else if(selectorPosition == 3){
+        if(page < maxPages)
+          page++;
+        else{
+          page = 0;
+          selectorPosition = 1;
+        }
+      }
+    }//else if
+    
+  }//while
+
+  lcd.clear();
+  return options[ page+selectorPosition-1 ];
+  
+}//mainMenu()
