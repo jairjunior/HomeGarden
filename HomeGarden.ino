@@ -122,7 +122,8 @@ unsigned long count = 0;
   // Só atualiza LCD depois de 1 segundo
   // Não bloqueia execução do loop
   if( (millis() - count) > 1000 ){
-    printDateAndHour(0,3, 0,2, PRINT_TEXT_DATE | PRINT_TEXT_HOUR | DOT_SEPARATOR);
+    printTime(0,2, PRINT_TEXT_HOUR);
+    printDate(0,3, PRINT_TEXT_DATE | DOT_SEPARATOR);
     count = millis();
   }
 
@@ -133,34 +134,11 @@ unsigned long count = 0;
  * 
  *
  *****************************************************************************/
-void printDateAndHour(int dateCol, int dateRow, int hourCol, int hourRow, byte printConfigs ){
+void printDate(int col, int row, byte printConfigs){
 const String weekDay[7] = {"Dom","Seg","Ter","Qua","Qui","Sex","Sab"};
 
-  //Imprime Nome do Projeto no topo, centralizado
-  printProjectName(5,0);
-  
-  //Imprime hora atual na primeira linha do LCD
-  lcd.setCursor(hourCol,hourRow);
-  if(printConfigs & PRINT_TEXT_HOUR)
-    lcd.print("Hora: ");
-  if(hour() < 10)
-    lcd.print("0");
-  lcd.print( hour() );
-  lcd.print(":");
-
-  if(minute() < 10)
-    lcd.print("0");
-  lcd.print( minute() );
-
-  if(printConfigs & PRINT_SECONDS){
-    lcd.print(":");
-    if(second() < 10)
-      lcd.print("0");
-    lcd.print( second() );
-  }
-
   //Imprime hora atual na segunda linha do LCD
-  lcd.setCursor(dateCol,dateRow);
+  lcd.setCursor(col,row);
   if(printConfigs & PRINT_TEXT_DATE)
     lcd.print("Data: ");
   lcd.print(weekDay[weekday()-1]);
@@ -179,6 +157,33 @@ const String weekDay[7] = {"Dom","Seg","Ter","Qua","Qui","Sex","Sab"};
   lcd.print( year()-2000 );
 }
 
+
+/******************************************************************************
+ * 
+ *
+ *****************************************************************************/
+void printTime(int col, int row, byte printConfigs){
+  
+  //Imprime hora atual na primeira linha do LCD
+  lcd.setCursor(col,row);
+  if(printConfigs & PRINT_TEXT_HOUR)
+    lcd.print("Hora: ");
+  if(hour() < 10)
+    lcd.print("0");
+  lcd.print( hour() );
+  lcd.print(":");
+
+  if(minute() < 10)
+    lcd.print("0");
+  lcd.print( minute() );
+
+  if(printConfigs & PRINT_SECONDS){
+    lcd.print(":");
+    if(second() < 10)
+      lcd.print("0");
+    lcd.print( second() );
+  }
+}
 /******************************************************************************
  * 
  *
@@ -216,7 +221,7 @@ void printProjectVersion(int col, int row){
  *****************************************************************************/
 String mainMenu(){
  int numberOfOptions = 6;
- const String options[numberOfOptions] = {"Set Time", "Set Date", "Lights", "Watering", "Sensors", "Exit"};
+ const String options[numberOfOptions] = {"Set Time", "Set Date", "Outputs", "Watering", "Sensors", "Exit"};
  const int lines = 3;
  const char selector = '>';
  int selectorPosition = 1;
