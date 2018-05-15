@@ -135,6 +135,7 @@ void loop(){
   // Só atualiza LCD depois de 1 segundo
   // Não bloqueia execução do loop
   if( (millis() - count) > 1000 ){
+    printProjectName(5,0);
     printTime(0,2, PRINT_TEXT_HOUR);
     printDate(0,3, PRINT_TEXT_DATE | DOT_SEPARATOR);
     count = millis();
@@ -345,7 +346,7 @@ String mainMenu(){
   }//while
 
   lcd.clear();
-  return options[ page+selectorPosition-1 ];
+  return options[ page + selectorPosition - 1 ];
   
 }//mainMenu()
 
@@ -356,21 +357,139 @@ String mainMenu(){
  *
  *****************************************************************************/
 void setTimeMenu(){
-
-  //int myHour = hour();
-  //int myMinute = minute();
-  //int mySecond = second();
+ int countBtnClicks = 0;
+ bool exitMenu = false;
+ int myHour = hour();
+ int myMinute = minute();
+ int mySecond = second();
+ int lastHour = myHour;
+ int lastMin = myMinute;
+ int lastSec = mySecond;
 
   lcd.clear();
   lcd.setCursor(6,0);
   lcd.print("SET TIME");
-
   printTime(6,2,PRINT_SECONDS);
-
-  lcd.setCursor(7,2);
+  lcd.setCursor(1,3);
+  lcd.print("Save");
+  lcd.setCursor(14,3);
+  lcd.print("Cancel");
+  
+  while( menuBtn.isPressed() );
   lcd.blink();
-  delay(10000);
 
+  
+  while( !exitMenu ){
+
+    if( menuBtn.isPressed() ){
+      if(countBtnClicks < 4)
+        countBtnClicks++;
+      else{
+        countBtnClicks = 0;
+        lcd.setCursor(13,3);
+        lcd.print(" ");
+        lcd.blink();
+      }
+      while( menuBtn.isPressed() );       
+    }
+
+    //Cursor piscando sobre as horas
+    if(countBtnClicks == 0){
+      if(myHour != lastHour){
+        lastHour = myHour;      
+        lcd.setCursor(6,2);
+        if(myHour < 10)
+          lcd.print("0");
+        lcd.print(myHour);
+      }
+      lcd.setCursor(7,2);
+
+      if( upBtn.isPressed() ){
+        if(myHour < 23)
+          myHour++;
+        else
+          myHour = 0;
+        while( upBtn.isPressed() );
+      }
+      else if( downBtn.isPressed() ){
+        if(myHour > 0)
+          myHour--;
+        else
+          myHour = 23;
+        while( downBtn.isPressed() );
+      } 
+    }
+    
+    //Cursor piscando sobre os minutos
+    else if(countBtnClicks == 1){
+      if(myMinute != lastMin){
+        lastMin = myMinute;      
+        lcd.setCursor(9,2);
+        if(myMinute < 10)
+          lcd.print("0");
+        lcd.print(myMinute);
+      }
+      lcd.setCursor(10,2);
+
+      if( upBtn.isPressed() ){
+        if(myMinute < 59)
+          myMinute++;
+        else
+          myMinute = 0;
+        while( upBtn.isPressed() );
+      }
+      else if( downBtn.isPressed() ){
+        if(myMinute > 0)
+          myMinute--;
+        else
+          myMinute = 59;
+        while( downBtn.isPressed() );
+      }
+    }
+    
+    //Cursor piscando sobre os segundos
+    else if(countBtnClicks == 2){
+      if(mySecond != lastSec){
+        lastSec = mySecond;      
+        lcd.setCursor(12,2);
+        if(mySecond < 10)
+          lcd.print("0");
+        lcd.print(mySecond);
+      }
+      lcd.setCursor(13,2);
+
+      if( upBtn.isPressed() ){
+        if(mySecond < 59)
+          mySecond++;
+        else
+          mySecond = 0;
+        while( upBtn.isPressed() );
+      }
+      else if( downBtn.isPressed() ){
+        if(mySecond > 0)
+          mySecond--;
+        else
+          mySecond = 59;
+        while( downBtn.isPressed() );
+      }
+    }
+    //Cursor na opção Set Time
+    else if(countBtnClicks == 3){
+      lcd.noBlink();
+      lcd.setCursor(0,3);
+      lcd.print('>');
+    }
+    //Cursor na opção Cancel
+    else if(countBtnClicks == 4){
+      lcd.setCursor(0,3);
+      lcd.print(" ");
+      lcd.setCursor(13,3);
+      lcd.print('>');
+    }
+    
+  }
+
+  lcd.noBlink();
 }
 
 
