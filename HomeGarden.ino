@@ -11,6 +11,15 @@
 #define DOT_SEPARATOR         B00001000
 #define DASH_SEPARATOR        B00010000
 
+void printDate(int col, int row, byte printConfigs);
+void printTime(int col, int row, byte printConfigs);
+void printDateSeparator(byte printConfigs);
+void printProjectName(int col, int row);
+void printProjectVersion(int col, int row);
+String mainMenu();
+void setTimeMenu();
+void setDateMenu();
+void OutputsMenu();
 
 // Strings contendo nome e versão do projeto
 const String projectName = "GrowSystem";
@@ -26,6 +35,9 @@ const int rs = 2, en = 3, d4 = 4, d5 = 5, d6 = 6, d7 = 7;
 
 // Instancia objeto do tipo LyquidCrystal
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
+// Caractere especial para LCD
+byte block[8] = { B11111,B11111,B11111,B11111,B11111,B11111,B11111,B11111 };
 
 // Instancia objeto para botão de MENU
 PushButton menuBtn(menuBtnPin, 50, DEFAULT_STATE_HIGH);
@@ -58,7 +70,7 @@ void setup(){
   lcd.setCursor(0,3);           //Cria animação de barra de carregamento (loading)
   for(int i = 0; i < 20; i++){
     lcd.write(byte(0));
-    delay(250);
+    delay(200);
   }
   
   //Ajusta o tempo do sistema e atualiza no RTC
@@ -84,8 +96,9 @@ void setup(){
   //Taxa de atualização da biblioteca Time com o RTC (segundos)
   setSyncInterval(60);
 
-
+  //Limpa LCD e reescreve nome no topo, centralizado
   lcd.clear();
+  printProjectName(5,0);
 }
 
 
