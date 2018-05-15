@@ -44,9 +44,6 @@ PushButton menuBtn(menuBtnPin, 50, DEFAULT_STATE_HIGH);
 PushButton upBtn(upBtnPin, 50, DEFAULT_STATE_HIGH);
 PushButton downBtn(downBtnPin, 50, DEFAULT_STATE_HIGH);
 
-byte block[8] = { B11111,B11111,B11111,B11111,B11111,B11111,B11111,B11111 };
-
-String menuControl = "";
 
 /********************************************************************************
  * 
@@ -111,12 +108,28 @@ void setup(){
  * 
  *******************************************************************************/
 void loop(){
-unsigned long count = 0;
+ String menuControl = "";
+ unsigned long count = 0;
 
   if( menuBtn.isPressed() ){
     menuControl = mainMenu();
-    while( menuBtn.isPressed() );
     Serial.println(menuControl);
+
+    if(menuControl == "Exit"){
+      printProjectName(5,0);
+      printTime(0,2, PRINT_TEXT_HOUR);
+      printDate(0,3, PRINT_TEXT_DATE | DOT_SEPARATOR);
+      while( menuBtn.isPressed() );
+    }
+    else if(menuControl == "Set Time"){
+      setTimeMenu();
+    }
+    else if(menuControl == "Set Date"){
+      setDateMenu();
+    }
+    else if(menuControl == "Outputs"){
+      OutputsMenu();
+    }
   }
 
   // Só atualiza LCD depois de 1 segundo
@@ -217,6 +230,8 @@ void printProjectVersion(int col, int row){
 
 /******************************************************************************
  * 
+ * Função MAIN MENU - cria o menu principal na tela
+ * Retorna uma String com o menu que foi selecionado
  *
  *****************************************************************************/
 String mainMenu(){
@@ -333,3 +348,39 @@ String mainMenu(){
   return options[ page+selectorPosition-1 ];
   
 }//mainMenu()
+
+
+/******************************************************************************
+ * 
+ * Função SET TIME MENU - cria menu para ajustar hora na tela
+ *
+ *****************************************************************************/
+void setTimeMenu(){
+
+  //int myHour = hour();
+  //int myMinute = minute();
+  //int mySecond = second();
+
+  lcd.clear();
+  lcd.setCursor(6,0);
+  lcd.print("SET TIME");
+
+  printTime(6,2,PRINT_SECONDS);
+
+  lcd.setCursor(7,2);
+  lcd.blink();
+  delay(10000);
+
+}
+
+
+void setDateMenu(){
+
+}
+
+
+
+void OutputsMenu(){
+
+}
+
