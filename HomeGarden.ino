@@ -20,6 +20,7 @@ byte defaultPrintConfigs = PRINT_SECONDS | PRINT_TEXT_DATE | PRINT_TEXT_HOUR | D
 
 
 // Protótipo de Funções
+void defaultMainView();
 void printDate(int col, int row, byte configs);
 void printTime(int col, int row, byte configs);
 void printTimeDigits(int digits);
@@ -144,16 +145,12 @@ void loop(){
     #endif
 
     if(menuControl == "Exit"){
-      printProjectName(5,0);
-      printTime(0,2, defaultPrintConfigs);
-      printDate(0,3, defaultPrintConfigs);
+      defaultMainView();
       while( menuBtn.isPressed() );
     }
     else if(menuControl == "Set Time"){
       setTimeMenu();
-      printProjectName(5,0);
-      printTime(0,2, defaultPrintConfigs);
-      printDate(0,3, defaultPrintConfigs);
+      defaultMainView();
       while( menuBtn.isPressed() );
     }
     else if(menuControl == "Set Date"){
@@ -167,11 +164,9 @@ void loop(){
   // Só atualiza LCD depois de 1 segundo
   // Não bloqueia execução do loop
   if( (millis() - count) > 1000 ){
-    printProjectName(5,0);
-    printTime(0,2, defaultPrintConfigs);
-    printDate(0,3, defaultPrintConfigs);
+    defaultMainView();
     count = millis();
-
+    
     #if DEBUG
       time_t currentTime = RTC.get();
       if(currentTime == 0){
@@ -188,7 +183,16 @@ void loop(){
 
 }
 
-
+/******************************************************************************
+ * 
+ * DEFAULT VIEW - Nome do projeto centralizado no topo, data e hora abaixo
+ *
+ *****************************************************************************/
+void defaultMainView(){
+  printProjectName(5,0);
+  printTime(0,2, defaultPrintConfigs);
+  printDate(0,3, defaultPrintConfigs);
+}
 /******************************************************************************
  * 
  * PRINT DATE - Imprime a data no LCD na posição indicada popr col e row
