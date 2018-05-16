@@ -1,7 +1,6 @@
 #include <PushButton.h>
 #include <LiquidCrystal.h>    //Display LCD alfanumérico
 #include <Wire.h>             //Interface I2C
-#include <Time.h>             //Tempo
 #include <TimeLib.h>          //Tempo
 #include <DS1307RTC.h>        //RTC DS1307
 
@@ -45,6 +44,9 @@ PushButton upBtn(upBtnPin, 50, DEFAULT_STATE_HIGH);
 PushButton downBtn(downBtnPin, 50, DEFAULT_STATE_HIGH);
 
 
+unsigned long count = 0;
+
+
 /********************************************************************************
  * 
  * Função SETUP - Roda uma vez ao inicializar.
@@ -64,8 +66,8 @@ void setup(){
   lcd.begin(20,4);              //Inicializa LCD 20x4
   printProjectName(5,0);        //Imprime nome do projeto
   printProjectVersion(8,1);     //Imprime versão do projeto
-  lcd.setCursor(0,3);           //Cria animação de barra de carregamento (loading)
-  for(int i = 0; i < 20; i++){
+  lcd.setCursor(0,3);
+  for(int i = 0; i < 20; i++){  //Cria animação de barra de carregamento (loading)
     lcd.write(byte(0));
     delay(200);
   }
@@ -79,6 +81,7 @@ void setup(){
   //Caso a sincronização tenha falhado, exibe mensagem de erro no LCD e trava execução
   setSyncProvider(RTC.get);
   if (timeStatus() != timeSet){
+    Serial.println("Unable to sync with the RTC");
     lcd.clear();
     lcd.print("ERRO 743:");
     lcd.setCursor(0,1);
@@ -88,6 +91,9 @@ void setup(){
     lcd.setCursor(0,3);
     lcd.print("Verifique o sistema.");
     while(true){}
+  }
+  else{
+    Serial.println("RTC has set the system time");
   }
 
   //Taxa de atualização da biblioteca Time com o RTC (segundos)
@@ -109,8 +115,7 @@ void setup(){
  *******************************************************************************/
 void loop(){
  String menuControl = "";
- unsigned long count = 0;
-
+ 
   if( menuBtn.isPressed() ){
     menuControl = mainMenu();
     Serial.println(menuControl);
@@ -123,6 +128,10 @@ void loop(){
     }
     else if(menuControl == "Set Time"){
       setTimeMenu();
+      printProjectName(5,0);
+      printTime(0,2, PRINT_TEXT_HOUR);
+      printDate(0,3, PRINT_TEXT_DATE | DOT_SEPARATOR);
+      while( menuBtn.isPressed() );
     }
     else if(menuControl == "Set Date"){
       setDateMenu();
@@ -139,6 +148,15 @@ void loop(){
     printTime(0,2, PRINT_TEXT_HOUR);
     printDate(0,3, PRINT_TEXT_DATE | DOT_SEPARATOR);
     count = millis();
+    
+    time_t currentTime = RTC.get();
+    if(currentTime == 0){
+      Serial.println("Cannot read current time from RTC");
+    }
+    else{
+      Serial.print("Current time on RTC: ");
+      Serial.println(currentTime);
+    }
   }
 
 }
@@ -365,7 +383,9 @@ void setTimeMenu(){
  int lastHour = myHour;
  int lastMin = myMinute;
  int lastSec = mySecond;
+ unsigned int delayBtn = 400;
 
+  //Monta layout do menu no display LCD
   lcd.clear();
   lcd.setCursor(6,0);
   lcd.print("SET TIME");
@@ -378,19 +398,54 @@ void setTimeMenu(){
   while( menuBtn.isPressed() );
   lcd.blink();
 
-  
+
+  //Laço que fica testanto botões e realizando as respectivas operações
+  //Vai sair do laço quando a opção Save ou Cancel forem selecionadas
   while( !exitMenu ){
 
-    if( menuBtn.isPressed() ){
+    //Se apertar o botão Menu
+    //São 4 posições possíveis para o cursor: hora, min, seg, Save, Cancel
+    //dualFunction retorna 1 se o click for simples ou -1 se o click for longo (enter)
+    if( menuBtn.dualFunction() == 1 ){
       if(countBtnClicks < 4)
         countBtnClicks++;
       else{
         countBtnClicks = 0;
-        lcd.setCursor(13,3);
+        lcd.setCursor(13,3);                //Apaga seletor que estava na opção Cancel
         lcd.print(" ");
         lcd.blink();
+      };
+    }
+    else if( menuBtn.dualFunction() == -1 ){
+      if(countBtnClicks == 3){  //Opção Save
+        setTime(myHour, myMinute, mySecond, day(), month(), year());
+        tmElements_t myTime;
+        breakTime(now(), myTime);
+        if( RTC.write(myTime) ){
+          Serial.println("Time adjusted to RTC.");
+          lcd.clear();
+          lcd.setCursor(8,0);
+          lcd.print("OK");
+          lcd.setCursor(1,2);
+          lcd.print("Time successfully");
+          lcd.setCursor(6,3);
+          lcd.print("adjusted");
+          delay(1500);
+        }
+        else {
+          Serial.println("ERROR while trying to update time in RTC.");
+          lcd.clear();
+          lcd.setCursor(7,1);
+          lcd.print("ERROR!");
+          lcd.setCursor(1,2);
+          lcd.print("Cannot adjust time");
+          delay(1500);
+        }
+        exitMenu = true;
       }
-      while( menuBtn.isPressed() );       
+      else if(countBtnClicks == 4){ //Opção Cancel: apenas sai do loop.
+        exitMenu = true;
+      }
     }
 
     //Cursor piscando sobre as horas
@@ -409,14 +464,14 @@ void setTimeMenu(){
           myHour++;
         else
           myHour = 0;
-        while( upBtn.isPressed() );
+        delay(delayBtn);
       }
       else if( downBtn.isPressed() ){
         if(myHour > 0)
           myHour--;
         else
           myHour = 23;
-        while( downBtn.isPressed() );
+        delay(delayBtn);
       } 
     }
     
@@ -436,14 +491,14 @@ void setTimeMenu(){
           myMinute++;
         else
           myMinute = 0;
-        while( upBtn.isPressed() );
+        delay(delayBtn);
       }
       else if( downBtn.isPressed() ){
         if(myMinute > 0)
           myMinute--;
         else
           myMinute = 59;
-        while( downBtn.isPressed() );
+        delay(delayBtn);
       }
     }
     
@@ -463,33 +518,35 @@ void setTimeMenu(){
           mySecond++;
         else
           mySecond = 0;
-        while( upBtn.isPressed() );
+        delay(delayBtn);
       }
       else if( downBtn.isPressed() ){
         if(mySecond > 0)
           mySecond--;
         else
           mySecond = 59;
-        while( downBtn.isPressed() );
+        delay(delayBtn);
       }
     }
-    //Cursor na opção Set Time
+    
+    //Cursor na opção Save
     else if(countBtnClicks == 3){
       lcd.noBlink();
       lcd.setCursor(0,3);
       lcd.print('>');
     }
+    
     //Cursor na opção Cancel
     else if(countBtnClicks == 4){
-      lcd.setCursor(0,3);
+      lcd.setCursor(0,3);           //Apaga o seletor que estava na opção Save
       lcd.print(" ");
-      lcd.setCursor(13,3);
+      lcd.setCursor(13,3);          //Escreve novo seletor
       lcd.print('>');
     }
     
   }
-
   lcd.noBlink();
+  lcd.clear();
 }
 
 
