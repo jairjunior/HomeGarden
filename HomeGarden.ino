@@ -6,22 +6,24 @@
 
 
 // Flag para habilitar depuração via Monitor Serial da Arduino IDE
-#define DEBUG false
+#define DEBUG true
 
 
 // Configurações para printar hora e data no LCD
 #define PRINT_SECONDS         B00000001
 #define PRINT_TEXT_DATE       B00000010
 #define PRINT_TEXT_HOUR       B00000100
-#define DOT_SEPARATOR         B00001000
-#define DASH_SEPARATOR        B00010000
-byte defaultPrintConfigs = PRINT_SECONDS | PRINT_TEXT_DATE | PRINT_TEXT_HOUR | DOT_SEPARATOR;
+#define PRINT_WEEK_DAY        B00001000
+#define DOT_SEPARATOR         B00010000
+#define DASH_SEPARATOR        B00100000
+byte defaultPrintConfigs = PRINT_SECONDS | PRINT_TEXT_DATE | PRINT_TEXT_HOUR | DOT_SEPARATOR | PRINT_WEEK_DAY;
 
 
 // Protótipo de Funções
 void printDate(int col, int row, byte configs);
 void printTime(int col, int row, byte configs);
-void printDateSeparator(byte configs);
+void printTimeDigits(int digits);
+void printDateDigits(int digits, byte configs);
 void printProjectName(int col, int row);
 void printProjectVersion(int col, int row);
 String mainMenu();
@@ -70,11 +72,12 @@ unsigned long count = 0;
  *******************************************************************************/
 void setup(){
 
-  pinMode(LED_BUILTIN, OUTPUT);
-
   #if DEBUG
     Serial.begin(9600);
+    Serial.println("Initializing system...");
   #endif
+
+  pinMode(LED_BUILTIN, OUTPUT);
 
   lcd.createChar(0, block);
   lcd.begin(20,4);              //Inicializa LCD 20x4
@@ -172,7 +175,7 @@ void loop(){
     #if DEBUG
       time_t currentTime = RTC.get();
       if(currentTime == 0){
-        Serial.println("Cannot read current time from RTC");
+        Serial.println("Cannot read current time from RTC.");
       }
       else{
         Serial.print("Current time on RTC: ");
@@ -188,6 +191,7 @@ void loop(){
 
 /******************************************************************************
  * 
+ * PRINT DATE - Imprime a data no LCD na posição indicada popr col e row
  *
  *****************************************************************************/
 void printDate(int col, int row, byte configs){
@@ -196,63 +200,75 @@ const String weekDay[7] = {"Dom","Seg","Ter","Qua","Qui","Sex","Sab"};
   //Imprime hora atual na segunda linha do LCD
   lcd.setCursor(col,row);
   if(configs & PRINT_TEXT_DATE)
-    lcd.print("Data: ");
-  lcd.print(weekDay[weekday()-1]);
-  lcd.print(", ");
-
+    lcd.print("Date: ");
+  if(configs & PRINT_WEEK_DAY){
+    lcd.print(weekDay[weekday()-1]);
+    lcd.print(", ");
+  }
   if(day() < 10)
     lcd.print("0");
-  lcd.print( day() );
-  printDateSeparator(configs);
-  
-  if(month() < 10)
-    lcd.print("0");
-  lcd.print( month() );
-  printDateSeparator(configs);
-
-  lcd.print( year()-2000 );
+  lcd.print(day());
+  printDateDigits(month(), configs);
+  printDateDigits(year()-2000, configs);
 }
 
 
 /******************************************************************************
  * 
+ * PRINT TIME - Imprime a hora no LCD na posição indicada popr col e row
  *
  *****************************************************************************/
 void printTime(int col, int row, byte configs){
   
-  //Imprime hora atual na primeira linha do LCD
   lcd.setCursor(col,row);
   if(configs & PRINT_TEXT_HOUR)
-    lcd.print("Hora: ");
+    lcd.print("Time: ");
+  
   if(hour() < 10)
     lcd.print("0");
-  lcd.print( hour() );
-  lcd.print(":");
+  lcd.print(hour());
+  printTimeDigits(minute());
+  if(configs & PRINT_SECONDS)
+    printTimeDigits(second());
 
-  if(minute() < 10)
-    lcd.print("0");
-  lcd.print( minute() );
-
-  if(configs & PRINT_SECONDS){
-    lcd.print(":");
-    if(second() < 10)
-      lcd.print("0");
-    lcd.print( second() );
-  }
 }
 /******************************************************************************
  * 
+ * Função auxiliar para imprimir os dígitos da data com o separador
  *
  *****************************************************************************/
-void printDateSeparator(byte configs){
-  if(configs & DOT_SEPARATOR)
+void printDateDigits(int digits, byte configs){
+  if(configs & DOT_SEPARATOR){
     lcd.print(".");
-  else if(configs & DASH_SEPARATOR)
+    if(digits < 10)
+      lcd.print("0");
+    lcd.print(digits);
+  }
+  else if(configs & DASH_SEPARATOR){
     lcd.print("-");
-  else
+    if(digits < 10)
+      lcd.print("0");
+    lcd.print(digits);
+  }
+  else{
     lcd.print("/");
+    if(digits < 10)
+      lcd.print("0");
+    lcd.print(digits);
+  }
 }
 
+/******************************************************************************
+ * 
+ * Função auxiliar para imprimir os dígitos da hora com o separador :
+ *
+ *****************************************************************************/
+void printTimeDigits(int digits){
+  lcd.print(":");
+  if(digits < 10)
+    lcd.print("0");
+  lcd.print(digits);
+}
 /******************************************************************************
  * 
  *
@@ -445,7 +461,7 @@ void setTimeMenu(){
         setTime(myHour, myMinute, mySecond, day(), month(), year());
 
         #if DEBUG
-          Serial.println("Time to set on RTC: ");
+          Serial.print("Time setted by user: ");
           serialClockDisplay();
         #endif
         
@@ -454,7 +470,7 @@ void setTimeMenu(){
         
         if( RTC.write(myTime) ){
           #if DEBUG
-            Serial.println("Time adjusted to RTC.");
+            Serial.println("OK! Time successfully adjusted in RTC.");
           #endif
           lcd.clear();
           lcd.setCursor(8,0);
@@ -467,7 +483,7 @@ void setTimeMenu(){
         }
         else {
           #if DEBUG
-            Serial.println("ERROR while trying to update time in RTC.");
+            Serial.println("ERROR! Cannot update time in RTC.");
           #endif
           lcd.clear();
           lcd.setCursor(7,1);
@@ -607,7 +623,7 @@ void serialClockDisplay(){
   Serial.print(hour());
   printDigits(minute());
   printDigits(second());
-  Serial.print(" - ");
+  Serial.print("  ");
   Serial.print(day());
   Serial.print("/");
   Serial.print(month());
@@ -616,7 +632,6 @@ void serialClockDisplay(){
   Serial.println(); 
 }
 void printDigits(int digits){
-  
   Serial.print(":");
   if(digits < 10)
     Serial.print('0');
