@@ -29,6 +29,9 @@ void printProjectName(int col, int row);
 void printProjectVersion(int col, int row);
 String mainMenu();
 void setTimeMenu();
+void printSetTimeView();
+void printSetDateView();
+void printSaveCancelOptions();
 void OutputsMenu();
 #if DEBUG
   void serialClockDisplay();
@@ -429,18 +432,8 @@ void setTimeMenu(){
  int lastSec = mySecond;
  unsigned int delayBtn = 400;
 
-  //Monta layout do menu no display LCD
-  lcd.clear();
-  lcd.setCursor(6,0);
-  lcd.print("SET TIME");
-  printTime(6,2,PRINT_SECONDS);
-  lcd.setCursor(1,3);
-  lcd.print("Save");
-  lcd.setCursor(14,3);
-  lcd.print("Cancel");
-  
+  printSetTimeView();
   while( menuBtn.isPressed() );
-  lcd.blink();
 
 
   //Laço que fica testanto botões e realizando as respectivas operações
@@ -605,6 +598,31 @@ void setTimeMenu(){
 }//function
 
 
+
+void printSetTimeView(){
+  lcd.clear();
+  lcd.setCursor(6,0);
+  lcd.print("SET TIME");
+  printTime(6,2,PRINT_SECONDS);
+  printSaveCancelOptions();
+  lcd.setCursor(7,0);
+  lcd.blink();
+}
+void printSetDateView(){
+  lcd.clear();
+  lcd.setCursor(6,0);
+  lcd.print("SET DATE");
+  printDate(6,2,DOT_SEPARATOR);
+  printSaveCancelOptions();
+  lcd.setCursor(7,0);
+  lcd.blink();
+}
+void printSaveCancelOptions(){
+  lcd.setCursor(1,3);
+  lcd.print("Save");
+  lcd.setCursor(14,3);
+  lcd.print("Cancel");
+}
 
 /******************************************************************************
  * 
