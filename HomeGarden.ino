@@ -4,46 +4,58 @@
 #include <TimeLib.h>          //Tempo
 #include <DS1307RTC.h>        //RTC DS1307
 
+
+// Flag para habilitar depuração via Monitor Serial da Arduino IDE
+#define DEBUG false
+
+
+// Configurações para printar hora e data no LCD
 #define PRINT_SECONDS         B00000001
 #define PRINT_TEXT_DATE       B00000010
 #define PRINT_TEXT_HOUR       B00000100
 #define DOT_SEPARATOR         B00001000
 #define DASH_SEPARATOR        B00010000
+byte defaultPrintConfigs = PRINT_SECONDS | PRINT_TEXT_DATE | PRINT_TEXT_HOUR | DOT_SEPARATOR;
 
-void printDate(int col, int row, byte printConfigs);
-void printTime(int col, int row, byte printConfigs);
-void printDateSeparator(byte printConfigs);
+
+// Protótipo de Funções
+void printDate(int col, int row, byte configs);
+void printTime(int col, int row, byte configs);
+void printDateSeparator(byte configs);
 void printProjectName(int col, int row);
 void printProjectVersion(int col, int row);
 String mainMenu();
 void setTimeMenu();
-void setDateMenu();
 void OutputsMenu();
+#if DEBUG
+  void serialClockDisplay();
+  void printDigits(int digits);
+#endif
 
 // Strings contendo nome e versão do projeto
 const String projectName = "GrowSystem";
 const String projectVersion = "v1.0";
 
-// Pinos dos botões
+
+// Configurações para LCD
+// Pinos a serem usados, instância do objeto LiquidCrystal
+// Caractere especial
+const int rs = 2, en = 3, d4 = 4, d5 = 5, d6 = 6, d7 = 7;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+byte block[8] = { B11111,B11111,B11111,B11111,B11111,B11111,B11111,B11111 };
+
+
+// Configurações dos botões.
+// Pinos dos botões e instâncias dos objetos da classe PushButton
 const int menuBtnPin = 8;
 const int upBtnPin = 9;
 const int downBtnPin = 10;
-
-// Pinos usados pelo display LCD
-const int rs = 2, en = 3, d4 = 4, d5 = 5, d6 = 6, d7 = 7;
-
-// Instancia objeto do tipo LyquidCrystal
-LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
-
-// Caractere especial para LCD
-byte block[8] = { B11111,B11111,B11111,B11111,B11111,B11111,B11111,B11111 };
-
-// Instancia objeto para botão de MENU
 PushButton menuBtn(menuBtnPin, 50, DEFAULT_STATE_HIGH);
 PushButton upBtn(upBtnPin, 50, DEFAULT_STATE_HIGH);
 PushButton downBtn(downBtnPin, 50, DEFAULT_STATE_HIGH);
 
 
+//Contador de tempo para controlar atualização do LCD
 unsigned long count = 0;
 
 
@@ -60,7 +72,9 @@ void setup(){
 
   pinMode(LED_BUILTIN, OUTPUT);
 
-  Serial.begin(9600);
+  #if DEBUG
+    Serial.begin(9600);
+  #endif
 
   lcd.createChar(0, block);
   lcd.begin(20,4);              //Inicializa LCD 20x4
@@ -81,7 +95,9 @@ void setup(){
   //Caso a sincronização tenha falhado, exibe mensagem de erro no LCD e trava execução
   setSyncProvider(RTC.get);
   if (timeStatus() != timeSet){
-    Serial.println("Unable to sync with the RTC");
+    #if DEBUG
+      Serial.println("Unable to sync with the RTC");
+    #endif
     lcd.clear();
     lcd.print("ERRO 743:");
     lcd.setCursor(0,1);
@@ -93,7 +109,9 @@ void setup(){
     while(true){}
   }
   else{
-    Serial.println("RTC has set the system time");
+    #if DEBUG
+      Serial.println("RTC has set the system time");
+    #endif
   }
 
   //Taxa de atualização da biblioteca Time com o RTC (segundos)
@@ -118,23 +136,25 @@ void loop(){
  
   if( menuBtn.isPressed() ){
     menuControl = mainMenu();
-    Serial.println(menuControl);
+    #if DEBUG
+      Serial.println(menuControl);
+    #endif
 
     if(menuControl == "Exit"){
       printProjectName(5,0);
-      printTime(0,2, PRINT_TEXT_HOUR);
-      printDate(0,3, PRINT_TEXT_DATE | DOT_SEPARATOR);
+      printTime(0,2, defaultPrintConfigs);
+      printDate(0,3, defaultPrintConfigs);
       while( menuBtn.isPressed() );
     }
     else if(menuControl == "Set Time"){
       setTimeMenu();
       printProjectName(5,0);
-      printTime(0,2, PRINT_TEXT_HOUR);
-      printDate(0,3, PRINT_TEXT_DATE | DOT_SEPARATOR);
+      printTime(0,2, defaultPrintConfigs);
+      printDate(0,3, defaultPrintConfigs);
       while( menuBtn.isPressed() );
     }
     else if(menuControl == "Set Date"){
-      setDateMenu();
+      
     }
     else if(menuControl == "Outputs"){
       OutputsMenu();
@@ -145,18 +165,22 @@ void loop(){
   // Não bloqueia execução do loop
   if( (millis() - count) > 1000 ){
     printProjectName(5,0);
-    printTime(0,2, PRINT_TEXT_HOUR);
-    printDate(0,3, PRINT_TEXT_DATE | DOT_SEPARATOR);
+    printTime(0,2, defaultPrintConfigs);
+    printDate(0,3, defaultPrintConfigs);
     count = millis();
-    
-    time_t currentTime = RTC.get();
-    if(currentTime == 0){
-      Serial.println("Cannot read current time from RTC");
-    }
-    else{
-      Serial.print("Current time on RTC: ");
-      Serial.println(currentTime);
-    }
+
+    #if DEBUG
+      time_t currentTime = RTC.get();
+      if(currentTime == 0){
+        Serial.println("Cannot read current time from RTC");
+      }
+      else{
+        Serial.print("Current time on RTC: ");
+        Serial.print(currentTime);
+        Serial.print(" - ");
+        serialClockDisplay();
+      }
+    #endif
   }
 
 }
@@ -166,12 +190,12 @@ void loop(){
  * 
  *
  *****************************************************************************/
-void printDate(int col, int row, byte printConfigs){
+void printDate(int col, int row, byte configs){
 const String weekDay[7] = {"Dom","Seg","Ter","Qua","Qui","Sex","Sab"};
 
   //Imprime hora atual na segunda linha do LCD
   lcd.setCursor(col,row);
-  if(printConfigs & PRINT_TEXT_DATE)
+  if(configs & PRINT_TEXT_DATE)
     lcd.print("Data: ");
   lcd.print(weekDay[weekday()-1]);
   lcd.print(", ");
@@ -179,12 +203,12 @@ const String weekDay[7] = {"Dom","Seg","Ter","Qua","Qui","Sex","Sab"};
   if(day() < 10)
     lcd.print("0");
   lcd.print( day() );
-  printDateSeparator(printConfigs);
+  printDateSeparator(configs);
   
   if(month() < 10)
     lcd.print("0");
   lcd.print( month() );
-  printDateSeparator(printConfigs);
+  printDateSeparator(configs);
 
   lcd.print( year()-2000 );
 }
@@ -194,11 +218,11 @@ const String weekDay[7] = {"Dom","Seg","Ter","Qua","Qui","Sex","Sab"};
  * 
  *
  *****************************************************************************/
-void printTime(int col, int row, byte printConfigs){
+void printTime(int col, int row, byte configs){
   
   //Imprime hora atual na primeira linha do LCD
   lcd.setCursor(col,row);
-  if(printConfigs & PRINT_TEXT_HOUR)
+  if(configs & PRINT_TEXT_HOUR)
     lcd.print("Hora: ");
   if(hour() < 10)
     lcd.print("0");
@@ -209,7 +233,7 @@ void printTime(int col, int row, byte printConfigs){
     lcd.print("0");
   lcd.print( minute() );
 
-  if(printConfigs & PRINT_SECONDS){
+  if(configs & PRINT_SECONDS){
     lcd.print(":");
     if(second() < 10)
       lcd.print("0");
@@ -220,10 +244,10 @@ void printTime(int col, int row, byte printConfigs){
  * 
  *
  *****************************************************************************/
-void printDateSeparator(byte printConfigs){
-  if(printConfigs & DOT_SEPARATOR)
+void printDateSeparator(byte configs){
+  if(configs & DOT_SEPARATOR)
     lcd.print(".");
-  else if(printConfigs & DASH_SEPARATOR)
+  else if(configs & DASH_SEPARATOR)
     lcd.print("-");
   else
     lcd.print("/");
@@ -414,15 +438,24 @@ void setTimeMenu(){
         lcd.setCursor(13,3);                //Apaga seletor que estava na opção Cancel
         lcd.print(" ");
         lcd.blink();
-      };
+      }
     }
     else if( menuBtn.dualFunction() == -1 ){
       if(countBtnClicks == 3){  //Opção Save
         setTime(myHour, myMinute, mySecond, day(), month(), year());
+
+        #if DEBUG
+          Serial.println("Time to set on RTC: ");
+          serialClockDisplay();
+        #endif
+        
         tmElements_t myTime;
         breakTime(now(), myTime);
+        
         if( RTC.write(myTime) ){
-          Serial.println("Time adjusted to RTC.");
+          #if DEBUG
+            Serial.println("Time adjusted to RTC.");
+          #endif
           lcd.clear();
           lcd.setCursor(8,0);
           lcd.print("OK");
@@ -433,7 +466,9 @@ void setTimeMenu(){
           delay(1500);
         }
         else {
-          Serial.println("ERROR while trying to update time in RTC.");
+          #if DEBUG
+            Serial.println("ERROR while trying to update time in RTC.");
+          #endif
           lcd.clear();
           lcd.setCursor(7,1);
           lcd.print("ERROR!");
@@ -544,19 +579,47 @@ void setTimeMenu(){
       lcd.print('>');
     }
     
-  }
+  }//while
   lcd.noBlink();
   lcd.clear();
-}
-
-
-void setDateMenu(){
-
-}
+}//function
 
 
 
+/******************************************************************************
+ * 
+ * Função OUTPUTS MENU - Cria menu para configurar saídas do sistema
+ *
+ *****************************************************************************/
 void OutputsMenu(){
 
 }
 
+
+
+
+
+
+
+// Funções auxiliares para debug que imprimem relógio e calendário via porta Serial
+#if DEBUG
+void serialClockDisplay(){
+  Serial.print(hour());
+  printDigits(minute());
+  printDigits(second());
+  Serial.print(" - ");
+  Serial.print(day());
+  Serial.print("/");
+  Serial.print(month());
+  Serial.print("/");
+  Serial.print(year()); 
+  Serial.println(); 
+}
+void printDigits(int digits){
+  
+  Serial.print(":");
+  if(digits < 10)
+    Serial.print('0');
+  Serial.print(digits);
+}
+#endif
