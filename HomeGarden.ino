@@ -19,7 +19,7 @@
 
 
 // Protótipo de Funções
-void defaultMainView();
+void printMainView();
 void printDate(int col, int row, byte configs);
 void printTime(int col, int row, byte configs);
 void updateScreenDate(int col, int row, byte configs);
@@ -104,8 +104,8 @@ void setup(){
   
   //Ajusta o tempo do sistema e atualiza no RTC
   //Uma vez tendo ajustado o tempo no RTC, as duas linhas seguintes podem ser comentadas
-  setTime(23,59,40,31,12,2018);         //horas, minutos, segundos, dia, mês, ano
-  RTC.set( now() );
+  //setTime(23,59,40,31,12,2018);         //horas, minutos, segundos, dia, mês, ano
+  //RTC.set( now() );
 
   //Sincroniza a biblioteca Time com a data e hora do RTC
   //Caso a sincronização tenha falhado, exibe mensagem de erro no LCD e trava execução
@@ -132,7 +132,7 @@ void setup(){
     #endif
   }
   breakTime(now(), tm);
-  defaultMainView();
+  printMainView();
 }
 
 
@@ -155,12 +155,12 @@ void loop(){
     #endif
 
     if(menuOption == "Exit"){
-      defaultMainView();
+      printMainView();
       while( menuBtn.isPressed() );
     }
     else if(menuOption == "Set Time"){
       setDateTimeMenu(menuOption);
-      defaultMainView();
+      printMainView();
       while( menuBtn.isPressed() );
     }
     else if(menuOption == "Set Date"){
@@ -199,7 +199,7 @@ void loop(){
  * DEFAULT VIEW - Nome do projeto centralizado no topo, data e hora abaixo
  *
  *****************************************************************************/
-void defaultMainView(){
+void printMainView(){
   lcd.clear();
   printProjectName(5,0);
   printTime(tCol, tRow, defaultPrintConfigs);
