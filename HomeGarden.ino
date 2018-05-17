@@ -1,4 +1,4 @@
-#include <PushButton.h>
+#include <PushButton.h>       //Debounce dos botões
 #include <LiquidCrystal.h>    //Display LCD alfanumérico
 #include <Wire.h>             //Interface I2C
 #include <TimeLib.h>          //Tempo
@@ -6,37 +6,40 @@
 
 
 // Flag para habilitar depuração via Monitor Serial da Arduino IDE
-#define DEBUG true
+#define DEBUG false
 
 
 // Configurações para printar hora e data no LCD
 #define PRINT_SECONDS         B00000001
 #define PRINT_TEXT_DATE       B00000010
-#define PRINT_TEXT_HOUR       B00000100
+#define PRINT_TEXT_TIME       B00000100
 #define PRINT_WEEK_DAY        B00001000
 #define DOT_SEPARATOR         B00010000
 #define DASH_SEPARATOR        B00100000
-byte defaultPrintConfigs = PRINT_SECONDS | PRINT_TEXT_DATE | PRINT_TEXT_HOUR | DOT_SEPARATOR | PRINT_WEEK_DAY;
 
 
 // Protótipo de Funções
 void defaultMainView();
 void printDate(int col, int row, byte configs);
 void printTime(int col, int row, byte configs);
+void updateScreenDate(int col, int row, byte configs);
+void updateScreenTime(int col, int row, byte configs);
 void printTimeDigits(int digits);
 void printDateDigits(int digits, byte configs);
 void printProjectName(int col, int row);
 void printProjectVersion(int col, int row);
 String mainMenu();
-void setTimeMenu();
+void setDateTimeMenu(String option);
 void printSetTimeView();
 void printSetDateView();
 void printSaveCancelOptions();
 void OutputsMenu();
+void printErrorMsg();
 #if DEBUG
   void serialClockDisplay();
   void printDigits(int digits);
 #endif
+
 
 // Strings contendo nome e versão do projeto
 const String projectName = "GrowSystem";
@@ -44,8 +47,9 @@ const String projectVersion = "v1.0";
 
 
 // Configurações para LCD
-// Pinos a serem usados, instância do objeto LiquidCrystal
-// Caractere especial
+// Número de linhas e de colunas, Pinos a serem usados
+// Instância do objeto LiquidCrystal, Caractere especial
+uint8_t lcdNumCol = 20, lcdNumRow = 4;
 const int rs = 2, en = 3, d4 = 4, d5 = 5, d6 = 6, d7 = 7;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 byte block[8] = { B11111,B11111,B11111,B11111,B11111,B11111,B11111,B11111 };
@@ -61,9 +65,14 @@ PushButton upBtn(upBtnPin, 50, DEFAULT_STATE_HIGH);
 PushButton downBtn(downBtnPin, 50, DEFAULT_STATE_HIGH);
 
 
-//Contador de tempo para controlar atualização do LCD
-unsigned long count = 0;
-
+//VARIÁVEIS GLOBAIS DE USO GERAL DO PROGRAMA
+unsigned long lastUpdate = 0;                         //controla a atualização do LCD a cada 1s
+tmElements_t tm;                                      //Armazena tempo do sistema
+int tCol = 0, tRow = 2, dCol = 0, dRow = 3;           //Onde serão impressos data e hora no LCD
+const String weekDay[7] = {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"};
+byte defaultPrintConfigs =  PRINT_SECONDS | PRINT_TEXT_DATE | PRINT_TEXT_TIME | DOT_SEPARATOR | PRINT_WEEK_DAY;
+int errorNum;
+String errorMsg;
 
 /********************************************************************************
  * 
@@ -84,19 +93,19 @@ void setup(){
   pinMode(LED_BUILTIN, OUTPUT);
 
   lcd.createChar(0, block);
-  lcd.begin(20,4);              //Inicializa LCD 20x4
-  printProjectName(5,0);        //Imprime nome do projeto
-  printProjectVersion(8,1);     //Imprime versão do projeto
+  lcd.begin(lcdNumCol, lcdNumRow);  //Inicializa LCD 20x4
+  printProjectName(5,0);            //Imprime nome do projeto
+  printProjectVersion(8,1);         //Imprime versão do projeto
   lcd.setCursor(0,3);
-  for(int i = 0; i < 20; i++){  //Cria animação de barra de carregamento (loading)
+  for(int i = 0; i < 20; i++){      //Cria animação de barra de carregamento (loading)
     lcd.write(byte(0));
     delay(200);
   }
   
   //Ajusta o tempo do sistema e atualiza no RTC
   //Uma vez tendo ajustado o tempo no RTC, as duas linhas seguintes podem ser comentadas
-  //setTime(10,29,0,11,5,2018);         //horas, minutos, segundos, dia, mês, ano
-  //RTC.set( now() );
+  setTime(23,59,40,31,12,2018);         //horas, minutos, segundos, dia, mês, ano
+  RTC.set( now() );
 
   //Sincroniza a biblioteca Time com a data e hora do RTC
   //Caso a sincronização tenha falhado, exibe mensagem de erro no LCD e trava execução
@@ -113,20 +122,17 @@ void setup(){
     lcd.print("sincronizar com RTC.");
     lcd.setCursor(0,3);
     lcd.print("Verifique o sistema.");
-    while(true){}
+    while(true);
   }
   else{
+    setSyncInterval(60);
+    
     #if DEBUG
       Serial.println("RTC has set the system time");
     #endif
   }
-
-  //Taxa de atualização da biblioteca Time com o RTC (segundos)
-  setSyncInterval(60);
-
-  //Limpa LCD e reescreve nome no topo, centralizado
-  lcd.clear();
-  printProjectName(5,0);
+  breakTime(now(), tm);
+  defaultMainView();
 }
 
 
@@ -139,36 +145,38 @@ void setup(){
  * 
  *******************************************************************************/
 void loop(){
- String menuControl = "";
+ String menuOption = "";
  
   if( menuBtn.isPressed() ){
-    menuControl = mainMenu();
+    menuOption = mainMenu();
     #if DEBUG
-      Serial.println(menuControl);
+      Serial.print("MENU option: ");
+      Serial.println(menuOption);
     #endif
 
-    if(menuControl == "Exit"){
+    if(menuOption == "Exit"){
       defaultMainView();
       while( menuBtn.isPressed() );
     }
-    else if(menuControl == "Set Time"){
-      setTimeMenu();
+    else if(menuOption == "Set Time"){
+      setDateTimeMenu(menuOption);
       defaultMainView();
       while( menuBtn.isPressed() );
     }
-    else if(menuControl == "Set Date"){
+    else if(menuOption == "Set Date"){
       
     }
-    else if(menuControl == "Outputs"){
+    else if(menuOption == "Outputs"){
       OutputsMenu();
     }
   }
 
   // Só atualiza LCD depois de 1 segundo
   // Não bloqueia execução do loop
-  if( (millis() - count) > 1000 ){
-    defaultMainView();
-    count = millis();
+  if( (millis() - lastUpdate) > 1000 ){
+    lastUpdate = millis();
+    updateScreenTime(tCol, tRow, defaultPrintConfigs);
+    updateScreenDate(dCol, dRow, defaultPrintConfigs);
     
     #if DEBUG
       time_t currentTime = RTC.get();
@@ -192,19 +200,17 @@ void loop(){
  *
  *****************************************************************************/
 void defaultMainView(){
+  lcd.clear();
   printProjectName(5,0);
-  printTime(0,2, defaultPrintConfigs);
-  printDate(0,3, defaultPrintConfigs);
+  printTime(tCol, tRow, defaultPrintConfigs);
+  printDate(dCol, dRow, defaultPrintConfigs);
 }
 /******************************************************************************
  * 
- * PRINT DATE - Imprime a data no LCD na posição indicada popr col e row
+ * PRINT DATE - Imprime a data no LCD na posição indicada por col e row
  *
  *****************************************************************************/
 void printDate(int col, int row, byte configs){
-const String weekDay[7] = {"Dom","Seg","Ter","Qua","Qui","Sex","Sab"};
-
-  //Imprime hora atual na segunda linha do LCD
   lcd.setCursor(col,row);
   if(configs & PRINT_TEXT_DATE)
     lcd.print("Date: ");
@@ -219,6 +225,58 @@ const String weekDay[7] = {"Dom","Seg","Ter","Qua","Qui","Sex","Sab"};
   printDateDigits(year()-2000, configs);
 }
 
+/******************************************************************************
+ * 
+ * UPDATE DATE ON SCREEN - atualiza data no LCD
+ * Os parâmetros col e row devem descrever a primeira posição da data na tela,
+ * mesmo que ela possua a palavra "Date: " na frente.
+ * A função faz o offset necessário.
+ * 
+ * Essa função atualiza apenas o dia da semana e os dígitos da data quando 
+ * se faz necessário. 
+ * Uma comparação é feita entre a data atual e os dados armazenados na
+ * variável global "tmElements_t tm".
+ *
+ *****************************************************************************/
+void updateScreenDate(int col, int row, byte configs){
+  int offset = col;
+
+  if(configs & PRINT_TEXT_DATE)
+    offset += 6;
+    
+  if(configs & PRINT_WEEK_DAY){
+    if(weekday() != tm.Wday){
+      tm.Wday = weekday();
+      lcd.setCursor(offset, row); //offset 0 ou 6
+      lcd.print(weekDay[weekday()-1]);
+      lcd.print(", ");
+    }
+    offset += 5;
+  }
+  
+
+  if(day() != tm.Day){
+    tm.Day = day();
+    lcd.setCursor(offset, row); //offset 0, 5, 6 ou 11
+    if(day() < 10)
+      lcd.print("0");
+    lcd.print(day());
+  }
+  offset += 2;
+  
+  if(month() != tm.Month){
+    tm.Month = month();
+    lcd.setCursor(offset, row); //coluna 13
+    printDateDigits(month(), configs);
+  }
+  offset += 3;
+  
+  if(year()-1970 != tm.Month){
+    tm.Year = year()-1970;
+    lcd.setCursor(offset, row); //coluna 16
+    printDateDigits(year()-2000, configs);
+  }
+}
 
 /******************************************************************************
  * 
@@ -226,9 +284,8 @@ const String weekDay[7] = {"Dom","Seg","Ter","Qua","Qui","Sex","Sab"};
  *
  *****************************************************************************/
 void printTime(int col, int row, byte configs){
-  
   lcd.setCursor(col,row);
-  if(configs & PRINT_TEXT_HOUR)
+  if(configs & PRINT_TEXT_TIME)
     lcd.print("Time: ");
   
   if(hour() < 10)
@@ -237,8 +294,50 @@ void printTime(int col, int row, byte configs){
   printTimeDigits(minute());
   if(configs & PRINT_SECONDS)
     printTimeDigits(second());
-
 }
+
+/******************************************************************************
+ * 
+ * UPDATE TIME ON SCREEN - atualiza a hora no LCD
+ * Os parâmetros col e row devem descrever a primeira posição da hora na tela, 
+ * mesmo que ela possua a palavra "Time: " na frente.
+ * A função faz o offset necessário.
+ * 
+ * Essa função atualiza apenas os dígitos da hora quando se faz necessário. 
+ * Uma comparação é feita entre a hora atual e os dados armazenados na
+ * variável global "tmElements_t tm".
+ *
+ *****************************************************************************/
+void updateScreenTime(int col, int row, byte configs){
+  int offset = col;
+  
+  if(configs & PRINT_TEXT_TIME)
+    offset += 6;
+    
+  if(hour() != tm.Hour){
+    tm.Hour = hour();
+    lcd.setCursor(offset, row); //coluna 6
+    if(hour() < 10)
+      lcd.print("0");
+    lcd.print(hour());
+  }
+  offset += 2;
+
+  if(minute() != tm.Minute){
+    tm.Minute = minute();
+    lcd.setCursor(offset, row); //colua 8
+    printTimeDigits(minute());
+  }
+  offset += 3;
+
+  if(configs & PRINT_SECONDS)
+    if(second() != tm.Second){
+      tm.Second = second();
+      lcd.setCursor(offset, row); //coluna 11
+      printTimeDigits(second());
+    }
+}
+
 /******************************************************************************
  * 
  * Função auxiliar para imprimir os dígitos da data com o separador
@@ -421,7 +520,7 @@ String mainMenu(){
  * Função SET TIME MENU - cria menu para ajustar hora na tela
  *
  *****************************************************************************/
-void setTimeMenu(){
+void setDateTimeMenu(String option){
  int countBtnClicks = 0;
  bool exitMenu = false;
  int myHour = hour();
@@ -432,7 +531,13 @@ void setTimeMenu(){
  int lastSec = mySecond;
  unsigned int delayBtn = 400;
 
-  printSetTimeView();
+  if(option == "Set Time")
+    printSetTimeView();
+  else if(option == "Set Date")
+    printSetDateView();
+  else{
+    printErrorMsg();
+  }
   while( menuBtn.isPressed() );
 
 
@@ -634,6 +739,11 @@ void OutputsMenu(){
 }
 
 
+
+
+void printErrorMsg(){
+  
+}
 
 
 
