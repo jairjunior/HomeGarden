@@ -14,8 +14,9 @@
 #define PRINT_TEXT_DATE       B00000010
 #define PRINT_TEXT_TIME       B00000100
 #define PRINT_WEEK_DAY        B00001000
-#define DOT_SEPARATOR         B00010000
-#define DASH_SEPARATOR        B00100000
+#define PRINT_FULL_YEAR       B00010000
+#define DOT_SEPARATOR         B00100000
+#define DASH_SEPARATOR        B01000000
 
 
 // Protótipo de Funções
@@ -34,7 +35,7 @@ void printSetTimeView();
 void printSetDateView();
 void printSaveCancelOptions();
 void OutputsMenu();
-void printErrorMsg();
+void printErrorMsg(int num, String msg);
 #if DEBUG
   void serialClockDisplay();
   void printDigits(int digits);
@@ -164,7 +165,9 @@ void loop(){
       while( menuBtn.isPressed() );
     }
     else if(menuOption == "Set Date"){
-      
+      setDateTimeMenu(menuOption);
+      printMainView();
+      while( menuBtn.isPressed() );
     }
     else if(menuOption == "Outputs"){
       OutputsMenu();
@@ -222,7 +225,10 @@ void printDate(int col, int row, byte configs){
     lcd.print("0");
   lcd.print(day());
   printDateDigits(month(), configs);
-  printDateDigits(year()-2000, configs);
+  if(configs & PRINT_FULL_YEAR)
+    printDateDigits(year(), configs);
+  else
+    printDateDigits(year()-2000, configs);
 }
 
 /******************************************************************************
@@ -517,18 +523,16 @@ String mainMenu(){
 
 /******************************************************************************
  * 
- * Função SET TIME MENU - cria menu para ajustar hora na tela
+ * Função SET DATE/TIME MENU - cria menu para ajustar hora ou data na tela
  *
  *****************************************************************************/
 void setDateTimeMenu(String option){
  int countBtnClicks = 0;
  bool exitMenu = false;
- int myHour = hour();
- int myMinute = minute();
- int mySecond = second();
- int lastHour = myHour;
- int lastMin = myMinute;
- int lastSec = mySecond;
+ int myHour = hour(), myMinute = minute(), mySecond = second();
+ int lastHour = myHour, lastMin = myMinute, lastSec = mySecond;
+ int myDay = day(), myMonth = month(), myYear = year();
+ int lastDay = myDay, lastMonth = myMonth, lastYear = myYear;
  unsigned int delayBtn = 400;
 
   if(option == "Set Time")
@@ -536,18 +540,16 @@ void setDateTimeMenu(String option){
   else if(option == "Set Date")
     printSetDateView();
   else{
-    printErrorMsg();
+    errorNum = 21;
+    errorMsg = "Wrong parameter in function SetDateTimeMenu().";
+    printErrorMsg(errorNum, errorMsg);
   }
   while( menuBtn.isPressed() );
+  lcd.blink();
 
-
-  //Laço que fica testanto botões e realizando as respectivas operações
-  //Vai sair do laço quando a opção Save ou Cancel forem selecionadas
   while( !exitMenu ){
-
-    //Se apertar o botão Menu
-    //São 4 posições possíveis para o cursor: hora, min, seg, Save, Cancel
-    //dualFunction retorna 1 se o click for simples ou -1 se o click for longo (enter)
+    
+    //Click normal (muda de opção no menu)
     if( menuBtn.dualFunction() == 1 ){
       if(countBtnClicks < 4)
         countBtnClicks++;
@@ -555,44 +557,39 @@ void setDateTimeMenu(String option){
         countBtnClicks = 0;
         lcd.setCursor(13,3);                //Apaga seletor que estava na opção Cancel
         lcd.print(" ");
-        lcd.blink();
+        lcd.blink();                        //Cursor volta a piscar
       }
     }
-    else if( menuBtn.dualFunction() == -1 ){
+    
+    //Click longo (enter)
+    else if( menuBtn.dualFunction() == -1 ){    //click longo
       if(countBtnClicks == 3){  //Opção Save
-        setTime(myHour, myMinute, mySecond, day(), month(), year());
-
-        #if DEBUG
-          Serial.print("Time setted by user: ");
-          serialClockDisplay();
-        #endif
-        
+        if(option == "Set Time")
+          setTime(myHour, myMinute, mySecond, day(), month(), year());
+        else if(option == "Set Date")
+          setTime(hour(), minute(), second(), myDay, myMonth, myYear);  
         tmElements_t myTime;
         breakTime(now(), myTime);
         
+        #if DEBUG
+          Serial.print("Time and date setted by user: ");
+          serialClockDisplay();
+        #endif
+        
         if( RTC.write(myTime) ){
+          printSuccessMsg(option);
           #if DEBUG
-            Serial.println("OK! Time successfully adjusted in RTC.");
+            Serial.println("OK! Time/Date successfully adjusted in RTC.");
           #endif
-          lcd.clear();
-          lcd.setCursor(8,0);
-          lcd.print("OK");
-          lcd.setCursor(1,2);
-          lcd.print("Time successfully");
-          lcd.setCursor(6,3);
-          lcd.print("adjusted");
-          delay(1500);
         }
         else {
-          #if DEBUG
-            Serial.println("ERROR! Cannot update time in RTC.");
-          #endif
-          lcd.clear();
-          lcd.setCursor(7,1);
-          lcd.print("ERROR!");
-          lcd.setCursor(1,2);
-          lcd.print("Cannot adjust time");
+          errorNum = 721;
+          errorMsg = "Cannot update RTC.";
+          printErrorMsg(errorNum, errorMsg);
           delay(1500);
+          #if DEBUG
+            Serial.println("ERROR! Cannot update Time/Date in RTC.");
+          #endif
         }
         exitMenu = true;
       }
@@ -601,106 +598,185 @@ void setDateTimeMenu(String option){
       }
     }
 
-    //Cursor piscando sobre as horas
+    //------------------------------------------------------------------------------
+    //Cursor piscando sobre as horas ou dia do mês
     if(countBtnClicks == 0){
-      if(myHour != lastHour){
-        lastHour = myHour;      
+      if(option == "Set Time"){       //Ajuste das horas
+        if(myHour != lastHour){
+          lastHour = myHour;      
+          lcd.setCursor(6,2);
+          if(myHour < 10)
+            lcd.print("0");
+          lcd.print(myHour);
+        }
+        lcd.setCursor(7,2);
+  
+        if( upBtn.isPressed() ){
+          if(myHour < 23)
+            myHour++;
+          else
+            myHour = 0;
+          delay(delayBtn);
+        }
+        else if( downBtn.isPressed() ){
+          if(myHour > 0)
+            myHour--;
+          else
+            myHour = 23;
+          delay(delayBtn);
+        }
+      }     
+      else if(option == "Set Date"){      //Ajuste do dia do mês
+        if(myDay != lastDay){
+          lastDay = myDay;      
+          lcd.setCursor(5,2);
+          if(myDay < 10)
+            lcd.print("0");
+          lcd.print(myDay);
+        }
         lcd.setCursor(6,2);
-        if(myHour < 10)
-          lcd.print("0");
-        lcd.print(myHour);
+  
+        if( upBtn.isPressed() ){
+          if(myDay < 31)
+            myDay++;
+          else
+            myDay = 1;
+          delay(delayBtn);
+        }
+        else if( downBtn.isPressed() ){
+          if(myDay > 1)
+            myDay--;
+          else
+            myDay = 31;
+          delay(delayBtn);
+        }
       }
-      lcd.setCursor(7,2);
-
-      if( upBtn.isPressed() ){
-        if(myHour < 23)
-          myHour++;
-        else
-          myHour = 0;
-        delay(delayBtn);
-      }
-      else if( downBtn.isPressed() ){
-        if(myHour > 0)
-          myHour--;
-        else
-          myHour = 23;
-        delay(delayBtn);
-      } 
     }
-    
-    //Cursor piscando sobre os minutos
+
+    //------------------------------------------------------------------------------
+    //Cursor piscando sobre os minutos ou sobre o mês
     else if(countBtnClicks == 1){
-      if(myMinute != lastMin){
-        lastMin = myMinute;      
+      if(option == "Set Time"){       //Ajuste das minutos
+        if(myMinute != lastMin){
+          lastMin = myMinute;      
+          lcd.setCursor(8,2);
+          printTimeDigits(myMinute);
+        }
+        lcd.setCursor(10,2);
+  
+        if( upBtn.isPressed() ){
+          if(myMinute < 59)
+            myMinute++;
+          else
+            myMinute = 0;
+          delay(delayBtn);
+        }
+        else if( downBtn.isPressed() ){
+          if(myMinute > 0)
+            myMinute--;
+          else
+            myMinute = 59;
+          delay(delayBtn);
+        }
+      }
+      else if(option == "Set Date"){      //Ajuste do mês
+        if(myMonth != lastMonth){
+          lastMonth = myMonth;
+          lcd.setCursor(7,2);
+          printDateDigits(myMonth, DOT_SEPARATOR);
+        }
         lcd.setCursor(9,2);
-        if(myMinute < 10)
-          lcd.print("0");
-        lcd.print(myMinute);
-      }
-      lcd.setCursor(10,2);
-
-      if( upBtn.isPressed() ){
-        if(myMinute < 59)
-          myMinute++;
-        else
-          myMinute = 0;
-        delay(delayBtn);
-      }
-      else if( downBtn.isPressed() ){
-        if(myMinute > 0)
-          myMinute--;
-        else
-          myMinute = 59;
-        delay(delayBtn);
+  
+        if( upBtn.isPressed() ){
+          if(myMonth < 12)
+            myMonth++;
+          else
+            myMonth = 1;
+          delay(delayBtn);
+        }
+        else if( downBtn.isPressed() ){
+          if(myMonth > 1)
+            myMonth--;
+          else
+            myMonth = 12;
+          delay(delayBtn);
+        }
       }
     }
-    
-    //Cursor piscando sobre os segundos
+
+    //------------------------------------------------------------------------------
+    //Cursor piscando sobre os segundos ou sobre o ano
     else if(countBtnClicks == 2){
-      if(mySecond != lastSec){
-        lastSec = mySecond;      
-        lcd.setCursor(12,2);
-        if(mySecond < 10)
-          lcd.print("0");
-        lcd.print(mySecond);
+      if(option == "Set Time"){       //Ajuste das minutos
+        if(mySecond != lastSec){
+          lastSec = mySecond;      
+          lcd.setCursor(11,2);
+          printTimeDigits(mySecond);
+        }
+        lcd.setCursor(13,2);
+  
+        if( upBtn.isPressed() ){
+          if(mySecond < 59)
+            mySecond++;
+          else
+            mySecond = 0;
+          delay(delayBtn);
+        }
+        else if( downBtn.isPressed() ){
+          if(mySecond > 0)
+            mySecond--;
+          else
+            mySecond = 59;
+          delay(delayBtn);
+        }
       }
-      lcd.setCursor(13,2);
-
-      if( upBtn.isPressed() ){
-        if(mySecond < 59)
-          mySecond++;
-        else
-          mySecond = 0;
-        delay(delayBtn);
-      }
-      else if( downBtn.isPressed() ){
-        if(mySecond > 0)
-          mySecond--;
-        else
-          mySecond = 59;
-        delay(delayBtn);
+      else if(option == "Set Date"){      //Ajuste do ano
+        if(myYear != lastYear){
+          lastYear = myYear;
+          lcd.setCursor(10,2);
+          printDateDigits(myYear, DOT_SEPARATOR);
+        }
+        lcd.setCursor(14,2);
+  
+        if( upBtn.isPressed() ){
+          if(myYear < 2099)
+            myYear++;
+          else
+            myYear = 2015;
+          delay(delayBtn);
+        }
+        else if( downBtn.isPressed() ){
+          if(myYear > 2015)
+            myYear--;
+          else
+            myYear = 2099;
+          delay(delayBtn);
+        }
       }
     }
-    
+
+    //------------------------------------------------------------------------------
     //Cursor na opção Save
     else if(countBtnClicks == 3){
       lcd.noBlink();
       lcd.setCursor(0,3);
       lcd.print('>');
     }
-    
+
+    //------------------------------------------------------------------------------
     //Cursor na opção Cancel
     else if(countBtnClicks == 4){
       lcd.setCursor(0,3);           //Apaga o seletor que estava na opção Save
       lcd.print(" ");
-      lcd.setCursor(13,3);          //Escreve novo seletor
+      lcd.setCursor(13,3);          //Escreve novo seletor na opção Cancel
       lcd.print('>');
     }
     
   }//while
   lcd.noBlink();
-  lcd.clear();
 }//function
+
+
 
 
 
@@ -710,23 +786,33 @@ void printSetTimeView(){
   lcd.print("SET TIME");
   printTime(6,2,PRINT_SECONDS);
   printSaveCancelOptions();
-  lcd.setCursor(7,0);
-  lcd.blink();
 }
 void printSetDateView(){
   lcd.clear();
   lcd.setCursor(6,0);
   lcd.print("SET DATE");
-  printDate(6,2,DOT_SEPARATOR);
+  printDate(5,2,DOT_SEPARATOR | PRINT_FULL_YEAR);
   printSaveCancelOptions();
-  lcd.setCursor(7,0);
-  lcd.blink();
 }
 void printSaveCancelOptions(){
   lcd.setCursor(1,3);
   lcd.print("Save");
   lcd.setCursor(14,3);
   lcd.print("Cancel");
+}
+void printSuccessMsg(String option){
+  lcd.clear();
+  lcd.setCursor(8,0);
+  lcd.print("OK");
+  lcd.setCursor(1,2);
+  if(option == "Set Time")
+    lcd.print("Time ");
+  else if(option == "Set Date")
+    lcd.print("Date ");
+  lcd.print("successfully");
+  lcd.setCursor(6,3);
+  lcd.print("adjusted");
+  delay(1500);
 }
 
 /******************************************************************************
@@ -741,8 +827,9 @@ void OutputsMenu(){
 
 
 
-void printErrorMsg(){
-  
+void printErrorMsg(int num, String msg){
+  num++;
+  msg += ".";
 }
 
 
