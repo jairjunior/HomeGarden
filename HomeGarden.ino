@@ -593,7 +593,6 @@ String mainMenu(){
   
 }//mainMenu()
 
-
 /******************************************************************************
  * 
  * Função SET DATE/TIME MENU - cria menu para ajustar hora ou data na tela
@@ -884,7 +883,6 @@ void printSuccessMsg(String option){
   delay(1500);
 }
 
-
 /******************************************************************************
  * 
  * LIGHTS MENU - Cria menu para configurar as Lâmpadas
@@ -899,38 +897,38 @@ int lightsMenu(){
   lcd.clear();
   lcd.setCursor(3,0);
   lcd.print("LIGHTS CONFIG.");
-  lcd.setCursor(1,1);
+  lcd.setCursor(2,1);
   lcd.print("Light 1");
-  lcd.setCursor(1,2);
+  lcd.setCursor(2,2);
   lcd.print("Light 2");
-  lcd.setCursor(1,3);
+  lcd.setCursor(2,3);
   lcd.print("Exit");
   while( menuBtn.isPressed() );
   
   while(!exitMenu){
     
     if(selectorPosition == 1){
-      lcd.setCursor(0,2);
+      lcd.setCursor(1,2);
       lcd.print(BLANK_CHAR);
-      lcd.setCursor(0,3);
+      lcd.setCursor(1,3);
       lcd.print(BLANK_CHAR);
-      lcd.setCursor(0,1);
+      lcd.setCursor(1,1);
       lcd.print(SELECTOR);
     }
     else if(selectorPosition == 2){
-      lcd.setCursor(0,1);
+      lcd.setCursor(1,1);
       lcd.print(BLANK_CHAR);
-      lcd.setCursor(0,3);
+      lcd.setCursor(1,3);
       lcd.print(BLANK_CHAR);
-      lcd.setCursor(0,2);
+      lcd.setCursor(1,2);
       lcd.print(SELECTOR);
     }
     else if(selectorPosition == 3){
-      lcd.setCursor(0,1);
+      lcd.setCursor(1,1);
       lcd.print(BLANK_CHAR);
-      lcd.setCursor(0,2);
+      lcd.setCursor(1,2);
       lcd.print(BLANK_CHAR);
-      lcd.setCursor(0,3);
+      lcd.setCursor(1,3);
       lcd.print(SELECTOR);
     }
 
@@ -968,25 +966,25 @@ int lightsMenu(){
  * 
  *
  *****************************************************************************/
-int enableOutput(int output){
+int enableOutput(int outputNum){
  bool enable = false;
  bool exitMenu = false;
  int page = 0, lastPage = 1, maxPages;
  int cursorPosition = 1, lastCursorPosition = 0;
  const int lines = 2;
  const int numDisabledOpt = 2, numEnabledOpt = 3;
- const String enabledOptions[numEnabledOpt] = {"Config" ,"Disable" ,"Exit"};
-  const String disabledOptions[numDisabledOpt] = {"Enable", "Exit"};
+ const String enabledOptions[numEnabledOpt] = {"Config" ,"Disable" ,"Exit   "};
+ const String disabledOptions[numDisabledOpt] = {"Enable", "Exit"};
 
   lcd.clear();
   //Escreve o nome do Output a ser configurado
   //Ajusta variável enable de acordo com o status do Output
-  if(output == 1){
+  if(outputNum == 1){
     lcd.setCursor(6,0);
     lcd.print("LIGHT 1");
     enable = light1.enable;
   }
-  else if(output == 2){
+  else if(outputNum == 2){
     lcd.setCursor(6,0);
     lcd.print("LIGHT 2");
     enable = light2.enable;
@@ -996,12 +994,14 @@ int enableOutput(int output){
   if(enable){
     maxPages = numEnabledOpt - lines;       //2 páginas (0 e 1)
     lcd.setCursor(0,1);
-    lcd.print("Status: Enabled");
+    lcd.print("Status: ");
+    lcd.print(ENABLED_STR);
   }
   else{
     maxPages = numDisabledOpt - lines;     //somente 1 página (page 0)
     lcd.setCursor(0,1);
-    lcd.print("Status: Disabled");
+    lcd.print("Status: ");
+    lcd.print(DISABLED_STR);
   }
   while( menuBtn.isPressed() );
 
