@@ -892,12 +892,81 @@ void printSuccessMsg(String option){
 
 /******************************************************************************
  * 
- * Função OUTPUTS MENU - Cria menu para configurar saídas do sistema
+ * LIGHTS MENU - Cria menu para configurar as Lâmpadas
+ * Após escolher a lâmpada desejada, o usuário irá configurar a hora e os
+ * dias da semana para ligar/desligar as lâmpadas
  *
  *****************************************************************************/
-void OutputsMenu(){
+int lightsMenu(){
+ bool exitMenu = false;
+ int selectorPosition = 1;
+  
+  lcd.clear();
+  lcd.setCursor(3,0);
+  lcd.print("LIGHTS CONFIG.");
+  lcd.setCursor(1,1);
+  lcd.print("Light 1");
+  lcd.setCursor(1,2);
+  lcd.print("Light 2");
+  lcd.setCursor(1,3);
+  lcd.print("Exit");
+  while( menuBtn.isPressed() );
+  
+  while(!exitMenu){
+    
+    if(selectorPosition == 1){
+      lcd.setCursor(0,2);
+      lcd.print(BLANK_CHAR);
+      lcd.setCursor(0,3);
+      lcd.print(BLANK_CHAR);
+      lcd.setCursor(0,1);
+      lcd.print(SELECTOR);
+    }
+    else if(selectorPosition == 2){
+      lcd.setCursor(0,1);
+      lcd.print(BLANK_CHAR);
+      lcd.setCursor(0,3);
+      lcd.print(BLANK_CHAR);
+      lcd.setCursor(0,2);
+      lcd.print(SELECTOR);
+    }
+    else if(selectorPosition == 3){
+      lcd.setCursor(0,1);
+      lcd.print(BLANK_CHAR);
+      lcd.setCursor(0,2);
+      lcd.print(BLANK_CHAR);
+      lcd.setCursor(0,3);
+      lcd.print(SELECTOR);
+    }
 
-}
+    if( upBtn.isPressed() ){
+      if(selectorPosition > 1)
+        selectorPosition--;
+      else
+        selectorPosition = 3;
+      delay(DELAY_BTN);      
+    }
+    if( downBtn.isPressed() ){
+      if(selectorPosition < 3)
+        selectorPosition++;
+      else
+        selectorPosition = 1;
+      delay(DELAY_BTN);
+    }
+    if( menuBtn.isPressed() ){
+      exitMenu = true;
+    }
+  }//while
+  
+  if(selectorPosition == 1)
+    return 1;
+  else if(selectorPosition == 2)
+    return 2;
+  else
+    return EXIT_MENU;
+  
+}//lightsMenu()
+
 
 
 
