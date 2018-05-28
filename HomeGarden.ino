@@ -1351,12 +1351,12 @@ String setOnOffTime(int num){
  *
  *****************************************************************************/
 String setOnOffDays(int num){
-bool exitMenu = false;
-unsigned int cursorPosition = 0, lastCursorPosition = 1;
-bool daysChecked[7];
-String retValue = "";
-LcdPosition *cursorXY = (LcdPosition*) malloc( sizeof(LcdPosition) * 10 );
-LcdPosition *checkXY = (LcdPosition*) malloc( sizeof(LcdPosition) * 7 );
+ bool exitMenu = false;
+ unsigned int cursorPosition = 0, lastCursorPosition = 1;
+ bool daysChecked[7];
+ String retValue = "";
+ LcdPosition *cursorXY = (LcdPosition*) malloc( sizeof(LcdPosition) * 10 );
+ LcdPosition *checkXY = (LcdPosition*) malloc( sizeof(LcdPosition) * 7 );
 
   printWeekDaysView();
   while( menuBtn.isPressed() );
@@ -1396,7 +1396,7 @@ LcdPosition *checkXY = (LcdPosition*) malloc( sizeof(LcdPosition) * 7 );
   checkXY[2].row = 0;
   checkXY[3].col = 4;     //Wed
   checkXY[3].row = 1;
-  checkXY[4].col = 11;     //Thu
+  checkXY[4].col = 11;    //Thu
   checkXY[4].row = 1;
   checkXY[5].col = 18;    //Fri
   checkXY[5].row = 1;
@@ -1409,21 +1409,19 @@ LcdPosition *checkXY = (LcdPosition*) malloc( sizeof(LcdPosition) * 7 );
     //Reposiciona cursor no LCD
     if(cursorPosition != lastCursorPosition){
       lastCursorPosition = cursorPosition;
-      if(cursorPosition == 0)
+      if(cursorPosition == 0){
         lcd.setCursor(cursorXY[9].col, cursorXY[9].row);
-      else
+        lcd.print(BLANK_CHAR);}
+      else{
         lcd.setCursor(cursorXY[cursorPosition-1].col, cursorXY[cursorPosition-1].row);
-      lcd.print(BLANK_CHAR);
-      lcd.setCursor(cursorXY[cursorPosition+1].col, cursorXY[cursorPosition+1].row);
-      lcd.print(BLANK_CHAR);
+        lcd.print(BLANK_CHAR);}
       
-      if(cursorPosition == 9)
+      if(cursorPosition == 9){
         lcd.setCursor(cursorXY[0].col, cursorXY[0].row);
-      else
+        lcd.print(BLANK_CHAR);}
+      else{
         lcd.setCursor(cursorXY[cursorPosition+1].col, cursorXY[cursorPosition+1].row);
-      lcd.print(BLANK_CHAR);
-      lcd.setCursor(cursorXY[cursorPosition-1].col, cursorXY[cursorPosition-1].row);
-      lcd.print(BLANK_CHAR);
+        lcd.print(BLANK_CHAR);}
       
       lcd.setCursor(cursorXY[cursorPosition].col, cursorXY[cursorPosition].row);
       lcd.print(SELECTOR);
