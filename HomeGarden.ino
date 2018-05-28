@@ -42,7 +42,10 @@ typedef struct{
 // Opções para retorno das funções
 #define ENABLE_OPT      496
 #define DISABLE_OPT     902
-#define CONFIG_OPT      277
+#define CONFIG_OPT      263
+#define CANCEL_OPT      671
+#define NEXT_OPT        523
+#define SAVE_OPT        777
 #define EXIT_MENU       333
 #define EPIC_FAIL       666
 
@@ -58,11 +61,11 @@ void printDateDigits(int digits, byte configs);
 void printProjectName(int col, int row);
 void printProjectVersion(int col, int row);
 String mainMenu();
-void setDateTimeMenu(String option);
 int lightsMenu();
-int enableOutput(int num);
-String setOnOffTime(int num);
-String setOnOffDays(int num);
+int enableOutput(int outputNum);
+int setOnOffTime(int outputNum);
+int setOnOffDays(int outputNum);
+void setDateTimeMenu(String option);
 void printSetTimeView();
 void printSetDateView();
 void printSaveCancelOptions();
@@ -81,7 +84,7 @@ const int rs = 2, en = 3, d4 = 4, d5 = 5, d6 = 6, d7 = 7;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 byte defaultPrintConfigs =  PRINT_SECONDS | PRINT_TEXT_DATE | PRINT_TEXT_TIME | DOT_SEPARATOR | PRINT_WEEK_DAY;
 byte blockChar[8] = { B11111,B11111,B11111,B11111,B11111,B11111,B11111,B11111 };
-byte checkChar[8] = {0B00000,0B00000,0B00000,0B00001,0B10010,0B10100,0B11000,0B00000};
+byte checkChar[8] = { B00000,B00000,B00001,B10010,B10100,B11000,B00000,B00000 };
 
 
 // Configurações dos botões.
@@ -97,7 +100,7 @@ PushButton downBtn(downBtnPin, 50, DEFAULT_STATE_HIGH);
 //VARIÁVEIS GLOBAIS DE USO GERAL DO PROGRAMA
 unsigned long lastUpdate = 0;                         //controla a atualização do LCD na função loop()
 tmElements_t tm;                                      //Armazena tempo atual do sistema
-turnOnOff light1, light2;                             //Armazena informações de liga/desliga dos dispositivos
+TurnOnOff light1, light2;                             //Armazena informações de liga/desliga dos dispositivos
 int tCol = 0, tRow = 2, dCol = 0, dRow = 3;           //Onde serão impressos data e hora no LCD
 
 // Constantes
