@@ -848,40 +848,47 @@ void setDateTimeMenu(String option){
   lcd.noBlink();
 }//setDateTimeMenu()
 
+/******************************************************************************
+ * 
+ * Funções auxiliares para o ajuste de Hora e Data
+ * utilizadas pela função setDateTimeMenu()
+ *
+ *****************************************************************************/
 void printSetTimeView(){
   lcd.clear();
-  lcd.setCursor(6,0);
-  lcd.print("SET TIME");
+  lcd.setCursor(3,0);
+  lcd.print("SET SYSTEM TIME");
   printTime(6,2,PRINT_SECONDS);
   printSaveCancelOptions();
 }
 void printSetDateView(){
   lcd.clear();
-  lcd.setCursor(6,0);
-  lcd.print("SET DATE");
+  lcd.setCursor(3,0);
+  lcd.print("SET SYSTEM DATE");
   printDate(5,2,DOT_SEPARATOR | PRINT_FULL_YEAR);
   printSaveCancelOptions();
 }
 void printSaveCancelOptions(){
   lcd.setCursor(1,3);
-  lcd.print("Save");
+  lcd.print(SAVE_STR);
   lcd.setCursor(14,3);
-  lcd.print("Cancel");
+  lcd.print(CANCEL_STR);
 }
 void printSuccessMsg(String option){
   lcd.clear();
   lcd.setCursor(8,0);
   lcd.print("OK");
   lcd.setCursor(1,2);
-  if(option == "Set Time")
+  if(option == menuOptions[0])
     lcd.print("Time ");
-  else if(option == "Set Date")
+  else if(option == menuOptions[1])
     lcd.print("Date ");
   lcd.print("successfully");
   lcd.setCursor(6,3);
   lcd.print("adjusted");
   delay(1500);
 }
+
 
 /******************************************************************************
  * 
