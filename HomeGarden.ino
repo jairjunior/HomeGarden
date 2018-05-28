@@ -1345,7 +1345,142 @@ String setOnOffTime(int num){
   return retValue;
 }//setOnOffTime()
 
+/******************************************************************************
+ * 
+ * SET ON/OFF DAYS - ajusta o dia da semana para ligar ou desligar uma lâmpada
+ *
+ *****************************************************************************/
+String setOnOffDays(int num){
+bool exitMenu = false;
+unsigned int cursorPosition = 0, lastCursorPosition = 1;
+bool daysChecked[7];
+String retValue = "";
+LcdPosition *cursorXY = (LcdPosition*) malloc( sizeof(LcdPosition) * 10 );
+LcdPosition *checkXY = (LcdPosition*) malloc( sizeof(LcdPosition) * 7 );
 
+  printWeekDaysView();
+  while( menuBtn.isPressed() );
+  num++;
+
+  for(int i = 0; i < 7; i++)
+    daysChecked[i] = false;
+
+  //Posições onde o cursor deve ser escrito de acordo com a opção
+  cursorXY[0].col = 0;    //Sun
+  cursorXY[0].row = 0;
+  cursorXY[1].col = 7;    //Mon
+  cursorXY[1].row = 0;
+  cursorXY[2].col = 14;   //Tuw
+  cursorXY[2].row = 0;
+  cursorXY[3].col = 0;    //Wed
+  cursorXY[3].row = 1;
+  cursorXY[4].col = 7;    //Thu
+  cursorXY[4].row = 1;
+  cursorXY[5].col = 14;   //Fri
+  cursorXY[5].row = 1;
+  cursorXY[6].col = 0;    //Sat
+  cursorXY[6].row = 2;
+  cursorXY[7].col = 0;    //Save
+  cursorXY[7].row = 3;
+  cursorXY[8].col = 6;    //Back
+  cursorXY[8].row = 3;
+  cursorXY[9].col = 12;   //Cancel
+  cursorXY[9].row = 3;
+
+  //Posições onde o check deve ser escrito quando selecionar um dia da semana
+  checkXY[0].col = 4;     //Sun
+  checkXY[0].row = 0;
+  checkXY[1].col = 11;    //Mon
+  checkXY[1].row = 0;
+  checkXY[2].col = 18;    //Tue
+  checkXY[2].row = 0;
+  checkXY[3].col = 4;     //Wed
+  checkXY[3].row = 1;
+  checkXY[4].col = 11;     //Thu
+  checkXY[4].row = 1;
+  checkXY[5].col = 18;    //Fri
+  checkXY[5].row = 1;
+  checkXY[6].col = 4;     //Sat
+  checkXY[6].row = 2;
+
+
+  while(!exitMenu){
+
+    //Reposiciona cursor no LCD
+    if(cursorPosition != lastCursorPosition){
+      lastCursorPosition = cursorPosition;
+      if(cursorPosition == 0)
+        lcd.setCursor(cursorXY[9].col, cursorXY[9].row);
+      else
+        lcd.setCursor(cursorXY[cursorPosition-1].col, cursorXY[cursorPosition-1].row);
+      lcd.print(BLANK_CHAR);
+      lcd.setCursor(cursorXY[cursorPosition+1].col, cursorXY[cursorPosition+1].row);
+      lcd.print(BLANK_CHAR);
+      
+      if(cursorPosition == 9)
+        lcd.setCursor(cursorXY[0].col, cursorXY[0].row);
+      else
+        lcd.setCursor(cursorXY[cursorPosition+1].col, cursorXY[cursorPosition+1].row);
+      lcd.print(BLANK_CHAR);
+      lcd.setCursor(cursorXY[cursorPosition-1].col, cursorXY[cursorPosition-1].row);
+      lcd.print(BLANK_CHAR);
+      
+      lcd.setCursor(cursorXY[cursorPosition].col, cursorXY[cursorPosition].row);
+      lcd.print(SELECTOR);
+    }
+    
+    //Botão MENU
+    if( menuBtn.dualFunction() == 1 ){          //Click NORMAL (faz check em dia da semana)
+      if(cursorPosition < 7){
+        lcd.setCursor(checkXY[cursorPosition].col, checkXY[cursorPosition].row);
+        if(daysChecked[cursorPosition]){
+          lcd.print(BLANK_CHAR);
+          daysChecked[cursorPosition] = false;
+        }
+        else{
+          lcd.write(byte(1));
+          daysChecked[cursorPosition] = true;
+        }
+      }
+    }
+    else if( menuBtn.dualFunction() == -1 ){    //click LONGO (enter)
+      if(cursorPosition == 7){
+        retValue = SAVE_STR;
+        exitMenu = true;
+      }
+      else if(cursorPosition == 8){
+        retValue = BACK_STR;
+        exitMenu = true;
+      }
+      else if(cursorPosition == 9){
+        retValue = CANCEL_STR;
+        exitMenu = true;
+      }
+    }
+
+    //Botão DOWN
+    if( downBtn.isPressed() ){
+      if(cursorPosition < 9)
+        cursorPosition++;
+      else
+        cursorPosition = 0;
+      delay(800);
+    }
+    //Botão UP
+    else if( upBtn.isPressed() ){
+      if(cursorPosition > 0)
+        cursorPosition--;
+      else
+        cursorPosition = 9;
+      delay(800);
+    }
+
+  }//while
+
+  free(cursorXY);
+  free(checkXY);
+  return retValue;
+}//setOnOffDays
 void printErrorMsg(int num, String msg){
   num++;
   msg += ".";
