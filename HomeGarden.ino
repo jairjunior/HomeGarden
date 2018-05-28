@@ -1572,6 +1572,27 @@ void serialClockDisplay(){
   Serial.print(year()); 
   Serial.println(); 
 }
+void serialOutputOnOff(TurnOnOff *output){
+  Serial.print("Turn On Time: ");
+  Serial.print(output->onHour);
+  printDigits(output->onMinute);
+  printDigits(output->onSecond);
+  Serial.println("");
+
+  Serial.print("Turn Off Time: ");
+  Serial.print(output->offHour);
+  printDigits(output->offMinute);
+  printDigits(output->offSecond);
+  Serial.println("");
+  
+  Serial.print("Days of Week: ");
+  for(int i = 0; i < 7; i++){
+    if(output->daysOfWeek & (1 << i) ){
+      Serial.print(weekDay[i]);
+      Serial.print(" ");
+    }
+  }
+  Serial.println("");
 void printDigits(int digits){
   Serial.print(":");
   if(digits < 10)
