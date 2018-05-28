@@ -18,15 +18,9 @@ typedef struct{
   byte offHour;
   byte offMinute;
   byte offSecond;
-  bool sun;
-  bool mon;
-  bool tue;
-  bool wed;
-  bool thu;
-  bool fri;
-  bool sat;
+  byte daysOfWeek;
   bool enable;
-} turnOnOff;
+} TurnOnOff;
 
 // Estrutura p/ definir posições no LCD
 typedef struct{
