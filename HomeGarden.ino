@@ -20,6 +20,7 @@ typedef struct{
   byte offSecond;
   byte daysOfWeek;
   bool enable;
+  int pin;
 } TurnOnOff;
 
 // Estrutura p/ definir posições no LCD
@@ -140,7 +141,11 @@ void setup(){
     Serial.println("Initializing system...");
   #endif
 
-  pinMode(LED_BUILTIN, OUTPUT);
+  // Configura pinos para as lâmpadas como saída
+  light1->pin = 11;
+  light2->pin = 12;
+  pinMode(light1->pin, OUTPUT);
+  pinMode(light2->pin, OUTPUT);
 
   lcd.createChar(0, blockChar);
   lcd.createChar(1, checkChar);
