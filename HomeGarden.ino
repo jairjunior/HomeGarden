@@ -65,7 +65,7 @@ int lightsMenu();
 int enableOutput(int outputNum);
 int setOnOffTime(int outputNum);
 int setOnOffDays(int outputNum);
-void setDateTimeMenu(String option);
+void setSystemTime(String option);
 void printSetTimeView();
 void printSetDateView();
 void printSaveCancelOptions();
@@ -207,16 +207,18 @@ void loop(){
 
     //Opção SET SYSTEM TIME
     if(menuOption == menuOptions[0]){
-      setDateTimeMenu(menuOption);
+      setSystemTime(menuOption);
       printMainView();
       while( menuBtn.isPressed() );
     }
     //Opção SET SYSTEM DATE
     else if(menuOption == menuOptions[1]){
-      setDateTimeMenu(menuOption);
+      setSystemTime(menuOption);
       printMainView();
       while( menuBtn.isPressed() );
     }
+
+
     //Opção LIGHTS
     else if(menuOption == menuOptions[2]){
       int output = lightsMenu();  //Retorna 1 (light1), 2 (light2) ou EXIT_MENU
@@ -246,6 +248,8 @@ void loop(){
       printMainView();
       while( menuBtn.isPressed() );
     }
+
+
     //Opção WATERING
     else if(menuOption == menuOptions[3]){
       printMainView();
@@ -598,7 +602,7 @@ String mainMenu(){
  * Função SET DATE/TIME MENU - cria menu para ajustar hora ou data na tela
  *
  *****************************************************************************/
-void setDateTimeMenu(String option){
+void setSystemTime(String option){
  int countBtnClicks = 0;
  bool exitMenu = false;
  int myHour = hour(), myMinute = minute(), mySecond = second();
@@ -612,7 +616,7 @@ void setDateTimeMenu(String option){
     printSetDateView();
   else{
     errorNum = 21;
-    errorMsg = "Wrong parameter in function SetDateTimeMenu().";
+    errorMsg = "Wrong parameter in function setSystemTime().";
     printErrorMsg(errorNum, errorMsg);
   }
   while( menuBtn.isPressed() );
@@ -840,12 +844,12 @@ void setDateTimeMenu(String option){
     
   }//while
   lcd.noBlink();
-}//setDateTimeMenu()
+}//setSystemTime()
 
 /******************************************************************************
  * 
  * Funções auxiliares para o ajuste de Hora e Data
- * utilizadas pela função setDateTimeMenu()
+ * utilizadas pela função setSystemTime()
  *
  *****************************************************************************/
 void printSetTimeView(){
@@ -1480,7 +1484,7 @@ int setOnOffDays(int outputNum){
 /******************************************************************************
  * 
  * Funções auxiliares para o ajuste de Hora e Data
- * utilizadas pela função setDateTimeMenu()
+ * utilizadas pelas funções setOnOffTime() e setOnOffDays()
  *
  *****************************************************************************/
 void printOnOffTimeView(int outputNum){
@@ -1593,6 +1597,7 @@ void serialOutputOnOff(TurnOnOff *output){
     }
   }
   Serial.println("");
+}
 void printDigits(int digits){
   Serial.print(":");
   if(digits < 10)
