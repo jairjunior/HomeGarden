@@ -1481,6 +1481,69 @@ LcdPosition *checkXY = (LcdPosition*) malloc( sizeof(LcdPosition) * 7 );
   free(checkXY);
   return retValue;
 }//setOnOffDays
+/******************************************************************************
+ * 
+ * Funções auxiliares para o ajuste de Hora e Data
+ * utilizadas pela função setDateTimeMenu()
+ *
+ *****************************************************************************/
+void printOnOffTimeView(int num){
+  if(num < 1 || num > 2)
+    return;
+  lcd.clear();
+  lcd.setCursor(5,0);
+  lcd.print("SET LIGHT");
+  lcd.print(num);
+  lcd.setCursor(0,1);
+  lcd.print("Turn On:");
+  printZeroClock(10,1);
+  lcd.setCursor(0,2);
+  lcd.print("Turn Off:");
+  printZeroClock(10,2);
+  printCancelNextOptions();
+}
+void printWeekDaysView(){
+  lcd.clear();
+  lcd.setCursor(1,0);
+  lcd.print(weekDay[0]);
+  lcd.setCursor(8,0);
+  lcd.print(weekDay[1]);
+  lcd.setCursor(15,0);
+  lcd.print(weekDay[2]);
+  lcd.setCursor(1,1);
+  lcd.print(weekDay[3]);
+  lcd.setCursor(8,1);
+  lcd.print(weekDay[4]);
+  lcd.setCursor(15,1);
+  lcd.print(weekDay[5]);
+  lcd.setCursor(1,2);
+  lcd.print(weekDay[6]);
+  printSaveBackCancelOptions();
+}
+void printZeroClock(int col, int row){
+  lcd.setCursor(col,row);
+  lcd.print("00:00:00");
+}
+void printCancelNextOptions(){
+  lcd.setCursor(1,3);
+  lcd.print(NEXT_STR);
+  lcd.setCursor(14,3);
+  lcd.print(CANCEL_STR);
+}
+void printSaveBackCancelOptions(){
+  lcd.setCursor(1,3);
+  lcd.print(SAVE_STR);
+  lcd.setCursor(7,3);
+  lcd.print(BACK_STR);
+  lcd.setCursor(13,3);
+  lcd.print(CANCEL_STR);
+}
+/******************************************************************************
+ * 
+ * Função responsável por escrever no LCD uma mensagem de erro
+ * com seu respectivo código.
+ *
+ *****************************************************************************/
 void printErrorMsg(int num, String msg){
   num++;
   msg += ".";
