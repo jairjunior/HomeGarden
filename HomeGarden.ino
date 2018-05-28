@@ -230,19 +230,17 @@ void loop(){
       #endif
       
       if(output != EXIT_MENU){
-        int opt = enableOutput(output);   //Retorna Enable, Disable, Config, Exit
-        #if DEBUG
-          Serial.print("User option: ");
-          Serial.println(opt);
-        #endif
-        if(opt != EXIT_MENU){
-          String optConfig = setOnOffTime(output);
+        int enableOpt = enableOutput(output);//Retorna ENABLE_OPT, DISABLE_OPT, CONFIG_OPT, EXIT_MENU 
+        if( (enableOpt == ENABLE_OPT) || (enableOpt == CONFIG_OPT) ){
+          int optTime = setOnOffTime(output);    //Retorna NEXT_OPT ou CANCEL_OPT
+          if(optTime == NEXT_OPT)
+            int optDays = setOnOffDays(output);  //Retorna SAVE_OPT ou CANCEL_OPT
           #if DEBUG
-            Serial.print("User option: ");
-            Serial.println(optConfig);
+            if(output == 1)
+              serialOutputOnOff(&light1);
+            else if(output == 2)
+              serialOutputOnOff(&light2);
           #endif
-          if(optConfig == NEXT_STR)
-            setOnOffDays(output);
         }
       }
       printMainView();
