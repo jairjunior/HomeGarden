@@ -1097,16 +1097,16 @@ int enableOutput(int outputNum){
  * SET ON/OFF TIME - ajusta o horário para ligar ou desligar uma lâmpada
  *
  *****************************************************************************/
-String setOnOffTime(int num){
+int setOnOffTime(int outputNum){
  bool exitMenu = false;
  int cursorPosition = 1, lastCursorPosition = 0;
+ int retValue;
  byte onHour = 0, onMin = 0, onSec = 0;
  byte offHour = 0, offMin = 0, offSec = 0;
  byte lastOnHour = onHour, lastOnMin = onMin, lastOnSec = onSec;
  byte lastOffHour = offHour, lastOffMin = offMin, lastOffSec = offSec;
- String retValue = "";
 
-  printOnOffTimeView(num);
+  printOnOffTimeView(outputNum);
   while( menuBtn.isPressed() );
   
   while(!exitMenu){
@@ -1120,7 +1120,7 @@ String setOnOffTime(int num){
     
     else if( menuBtn.dualFunction() == -1 ){    //Click LONGO (ENTER)
       if(cursorPosition == 7){                  //Cursor na opção NEXT
-        if(num == 1){
+        if(outputNum == 1){
           light1.onHour = onHour;
           light1.onMinute = onMin;
           light1.onSecond = onSec;
@@ -1128,7 +1128,7 @@ String setOnOffTime(int num){
           light1.offMinute = offMin;
           light1.offSecond = offSec;
         }
-        else if(num == 2){
+        else if(outputNum == 2){
           light2.onHour = onHour;
           light2.onMinute = onMin;
           light2.onSecond = onSec;
@@ -1136,11 +1136,11 @@ String setOnOffTime(int num){
           light2.offMinute = offMin;
           light2.offSecond = offSec;
         }
-        retValue = NEXT_STR;
+        retValue = NEXT_OPT;
         exitMenu = true;
       }
       else if(cursorPosition == 8){             //Cursor na opção CANCEL
-        retValue = CANCEL_STR;
+        retValue = CANCEL_OPT;
         exitMenu = true;
       }
     }
@@ -1243,7 +1243,7 @@ String setOnOffTime(int num){
       }
       if(offHour != lastOffHour){               //Só atualiza LCD se for necessário
         lastOffHour = offHour;
-        lcd.setCursor(10,1);
+        lcd.setCursor(10,2);
         if(offHour < 10)
           lcd.print("0");
         lcd.print(offHour);
@@ -1345,17 +1345,16 @@ String setOnOffTime(int num){
  * SET ON/OFF DAYS - ajusta o dia da semana para ligar ou desligar uma lâmpada
  *
  *****************************************************************************/
-String setOnOffDays(int num){
+int setOnOffDays(int outputNum){
  bool exitMenu = false;
  unsigned int cursorPosition = 0, lastCursorPosition = 1;
  bool daysChecked[7];
- String retValue = "";
- LcdPosition *cursorXY = (LcdPosition*) malloc( sizeof(LcdPosition) * 10 );
+ int retValue;
+ LcdPosition *cursorXY = (LcdPosition*) malloc( sizeof(LcdPosition) * 9 );
  LcdPosition *checkXY = (LcdPosition*) malloc( sizeof(LcdPosition) * 7 );
 
   printWeekDaysView();
   while( menuBtn.isPressed() );
-  num++;
 
   for(int i = 0; i < 7; i++)
     daysChecked[i] = false;
@@ -1373,14 +1372,12 @@ String setOnOffDays(int num){
   cursorXY[4].row = 1;
   cursorXY[5].col = 14;   //Fri
   cursorXY[5].row = 1;
-  cursorXY[6].col = 0;    //Sat
+  cursorXY[6].col = 7;    //Sat
   cursorXY[6].row = 2;
   cursorXY[7].col = 0;    //Save
   cursorXY[7].row = 3;
-  cursorXY[8].col = 6;    //Back
+  cursorXY[8].col = 13;   //Cancel
   cursorXY[8].row = 3;
-  cursorXY[9].col = 12;   //Cancel
-  cursorXY[9].row = 3;
 
   //Posições onde o check deve ser escrito quando selecionar um dia da semana
   checkXY[0].col = 4;     //Sun
@@ -1395,7 +1392,7 @@ String setOnOffDays(int num){
   checkXY[4].row = 1;
   checkXY[5].col = 18;    //Fri
   checkXY[5].row = 1;
-  checkXY[6].col = 4;     //Sat
+  checkXY[6].col = 11;    //Sat
   checkXY[6].row = 2;
 
 
@@ -1405,13 +1402,13 @@ String setOnOffDays(int num){
     if(cursorPosition != lastCursorPosition){
       lastCursorPosition = cursorPosition;
       if(cursorPosition == 0){
-        lcd.setCursor(cursorXY[9].col, cursorXY[9].row);
+        lcd.setCursor(cursorXY[8].col, cursorXY[8].row);
         lcd.print(BLANK_CHAR);}
       else{
         lcd.setCursor(cursorXY[cursorPosition-1].col, cursorXY[cursorPosition-1].row);
         lcd.print(BLANK_CHAR);}
       
-      if(cursorPosition == 9){
+      if(cursorPosition == 8){
         lcd.setCursor(cursorXY[0].col, cursorXY[0].row);
         lcd.print(BLANK_CHAR);}
       else{
@@ -1421,7 +1418,6 @@ String setOnOffDays(int num){
       lcd.setCursor(cursorXY[cursorPosition].col, cursorXY[cursorPosition].row);
       lcd.print(SELECTOR);
     }
-    
     //Botão MENU
     if( menuBtn.dualFunction() == 1 ){          //Click NORMAL (faz check em dia da semana)
       if(cursorPosition < 7){
@@ -1429,31 +1425,39 @@ String setOnOffDays(int num){
         if(daysChecked[cursorPosition]){
           lcd.print(BLANK_CHAR);
           daysChecked[cursorPosition] = false;
+          if(outputNum == 1)
+            light1.daysOfWeek &= ~(1 << cursorPosition); 
+          else if(outputNum == 2)
+            light2.daysOfWeek &= ~(1 << cursorPosition);
         }
         else{
           lcd.write(byte(1));
           daysChecked[cursorPosition] = true;
+          if(outputNum == 1)
+            light1.daysOfWeek |= 1 << cursorPosition; 
+          else if(outputNum == 2)
+            light2.daysOfWeek |= 1 << cursorPosition;
         }
       }
     }
     else if( menuBtn.dualFunction() == -1 ){    //click LONGO (enter)
       if(cursorPosition == 7){
-        retValue = SAVE_STR;
+        retValue = SAVE_OPT;
         exitMenu = true;
+        if(outputNum == 1)
+          light1.enable = true;
+        else if (outputNum == 2)
+          light2.enable = true;
       }
       else if(cursorPosition == 8){
-        retValue = BACK_STR;
-        exitMenu = true;
-      }
-      else if(cursorPosition == 9){
-        retValue = CANCEL_STR;
+        retValue = CANCEL_OPT;
         exitMenu = true;
       }
     }
 
     //Botão DOWN
     if( downBtn.isPressed() ){
-      if(cursorPosition < 9)
+      if(cursorPosition < 8)
         cursorPosition++;
       else
         cursorPosition = 0;
@@ -1464,36 +1468,35 @@ String setOnOffDays(int num){
       if(cursorPosition > 0)
         cursorPosition--;
       else
-        cursorPosition = 9;
+        cursorPosition = 8;
       delay(800);
     }
-
   }//while
-
   free(cursorXY);
   free(checkXY);
   return retValue;
-}//setOnOffDays
+}//setOnOffDays()
+
 /******************************************************************************
  * 
  * Funções auxiliares para o ajuste de Hora e Data
  * utilizadas pela função setDateTimeMenu()
  *
  *****************************************************************************/
-void printOnOffTimeView(int num){
-  if(num < 1 || num > 2)
+void printOnOffTimeView(int outputNum){
+  if(outputNum < 1 || outputNum > 2)
     return;
   lcd.clear();
   lcd.setCursor(5,0);
   lcd.print("SET LIGHT");
-  lcd.print(num);
+  lcd.print(outputNum);
   lcd.setCursor(0,1);
   lcd.print("Turn On:");
   printZeroClock(10,1);
   lcd.setCursor(0,2);
   lcd.print("Turn Off:");
   printZeroClock(10,2);
-  printCancelNextOptions();
+  printNextCancelOptions();
 }
 void printWeekDaysView(){
   lcd.clear();
@@ -1509,28 +1512,21 @@ void printWeekDaysView(){
   lcd.print(weekDay[4]);
   lcd.setCursor(15,1);
   lcd.print(weekDay[5]);
-  lcd.setCursor(1,2);
+  lcd.setCursor(8,2);
   lcd.print(weekDay[6]);
-  printSaveBackCancelOptions();
+  printSaveCancelOptions();
 }
 void printZeroClock(int col, int row){
   lcd.setCursor(col,row);
   lcd.print("00:00:00");
 }
-void printCancelNextOptions(){
+void printNextCancelOptions(){
   lcd.setCursor(1,3);
   lcd.print(NEXT_STR);
   lcd.setCursor(14,3);
   lcd.print(CANCEL_STR);
 }
-void printSaveBackCancelOptions(){
-  lcd.setCursor(1,3);
-  lcd.print(SAVE_STR);
-  lcd.setCursor(7,3);
-  lcd.print(BACK_STR);
-  lcd.setCursor(13,3);
-  lcd.print(CANCEL_STR);
-}
+
 /******************************************************************************
  * 
  * Função responsável por escrever no LCD uma mensagem de erro
