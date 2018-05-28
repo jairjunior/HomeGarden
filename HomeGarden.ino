@@ -190,8 +190,10 @@ void setup(){
 }
 
 /********************************************************************************
+ ********************************************************************************
+ ********************************************************************************
  * 
- * Função LOOP - É repetida continuamente pelo firmware.
+ * LOOP - É repetida continuamente pelo firmware.
  * Após o boot, escreve data e hora na tela de acordo com os parâmetros da função
  * Testa botões de MENU ou de INFORMAÇÕES
  * 
@@ -206,22 +208,63 @@ void loop(){
       Serial.println(menuOption);
     #endif
 
-    if(menuOption == "Exit"){
-      printMainView();
-      while( menuBtn.isPressed() );
-    }
-    else if(menuOption == "Set Time"){
+    //Opção SET SYSTEM TIME
+    if(menuOption == menuOptions[0]){
       setDateTimeMenu(menuOption);
       printMainView();
       while( menuBtn.isPressed() );
     }
-    else if(menuOption == "Set Date"){
+    //Opção SET SYSTEM DATE
+    else if(menuOption == menuOptions[1]){
       setDateTimeMenu(menuOption);
       printMainView();
       while( menuBtn.isPressed() );
     }
-    else if(menuOption == "Outputs"){
-      OutputsMenu();
+    //Opção LIGHTS
+    else if(menuOption == menuOptions[2]){
+      int output = lightsMenu();  //Retorna 1 (light1), 2 (light2) ou EXIT_MENU
+      #if DEBUG
+        if(output != EXIT_MENU){
+          Serial.print("Config Light ");
+          Serial.println(output);
+        }
+        else
+          Serial.println("Exit Menu Lights.");
+      #endif
+      
+      if(output != EXIT_MENU){
+        int opt = enableOutput(output);   //Retorna Enable, Disable, Config, Exit
+        #if DEBUG
+          Serial.print("User option: ");
+          Serial.println(opt);
+        #endif
+        if(opt != EXIT_MENU){
+          String optConfig = setOnOffTime(output);
+          #if DEBUG
+            Serial.print("User option: ");
+            Serial.println(optConfig);
+          #endif
+          if(optConfig == NEXT_STR)
+            setOnOffDays(output);
+        }
+      }
+      printMainView();
+      while( menuBtn.isPressed() );
+    }
+    //Opção WATERING
+    else if(menuOption == menuOptions[3]){
+      printMainView();
+      while( menuBtn.isPressed() );
+    }
+    //Opção SENSORS
+    else if(menuOption == menuOptions[4]){
+      printMainView();
+      while( menuBtn.isPressed() );
+    }
+    //Opção EXIT
+    else if(menuOption == menuOptions[5]){
+      printMainView();
+      while( menuBtn.isPressed() );
     }
   }
 
@@ -246,7 +289,7 @@ void loop(){
     #endif
   }
 
-}
+}//loop()
 
 /******************************************************************************
  * 
