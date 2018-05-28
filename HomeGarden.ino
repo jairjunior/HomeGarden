@@ -380,7 +380,7 @@ void updateScreenDate(int col, int row, byte configs){
 
 /******************************************************************************
  * 
- * PRINT TIME - Imprime a hora no LCD na posição indicada popr col e row
+ * PRINT TIME - Imprime a hora no LCD na posição indicada por col e row
  *
  *****************************************************************************/
 void printTime(int col, int row, byte configs){
@@ -439,9 +439,7 @@ void updateScreenTime(int col, int row, byte configs){
 }
 
 /******************************************************************************
- * 
  * Função auxiliar para imprimir os dígitos da data com o separador
- *
  *****************************************************************************/
 void printDateDigits(int digits, byte configs){
   if(configs & DOT_SEPARATOR){
@@ -463,11 +461,8 @@ void printDateDigits(int digits, byte configs){
     lcd.print(digits);
   }
 }
-
-/******************************************************************************
- * 
+/****************************************************************************** 
  * Função auxiliar para imprimir os dígitos da hora com o separador :
- *
  *****************************************************************************/
 void printTimeDigits(int digits){
   lcd.print(":");
@@ -475,23 +470,17 @@ void printTimeDigits(int digits){
     lcd.print("0");
   lcd.print(digits);
 }
-/******************************************************************************
- * 
- *
- *****************************************************************************/
 void printProjectName(int col, int row){
     lcd.setCursor(col,row);
-    lcd.print(projectName);
+    lcd.print(PROJECT_NAME_STR);
 }
-
-/******************************************************************************
- * 
- *
- *****************************************************************************/
 void printProjectVersion(int col, int row){
     lcd.setCursor(col,row);
-    lcd.print(projectVersion);
+    lcd.print(PROJECT_VERSION_STR);
 }
+
+
+
 
 /******************************************************************************
  * 
