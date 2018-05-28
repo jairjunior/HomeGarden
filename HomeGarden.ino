@@ -611,11 +611,10 @@ void setDateTimeMenu(String option){
  int lastHour = myHour, lastMin = myMinute, lastSec = mySecond;
  int myDay = day(), myMonth = month(), myYear = year();
  int lastDay = myDay, lastMonth = myMonth, lastYear = myYear;
- unsigned int delayBtn = 400;
 
-  if(option == "Set Time")
+  if(option == menuOptions[0])          //Set System Time
     printSetTimeView();
-  else if(option == "Set Date")
+  else if(option == menuOptions[1])     //Set System Date
     printSetDateView();
   else{
     errorNum = 21;
@@ -627,24 +626,21 @@ void setDateTimeMenu(String option){
 
   while( !exitMenu ){
     
-    //Click normal (muda de opção no menu)
-    if( menuBtn.dualFunction() == 1 ){
+    if( menuBtn.dualFunction() == 1 ){      //Click NORMAL (muda de opção no menu)
       if(countBtnClicks < 4)
         countBtnClicks++;
       else{
         countBtnClicks = 0;
         lcd.setCursor(13,3);                //Apaga seletor que estava na opção Cancel
-        lcd.print(" ");
-        lcd.blink();                        //Cursor volta a piscar
+        lcd.print(BLANK_CHAR);
+        lcd.blink();
       }
     }
-    
-    //Click longo (enter)
-    else if( menuBtn.dualFunction() == -1 ){    //click longo
-      if(countBtnClicks == 3){  //Opção Save
-        if(option == "Set Time")
+    else if( menuBtn.dualFunction() == -1 ){    //click LONGO (enter)
+      if(countBtnClicks == 3){                  //Opção SAVE
+        if(option == menuOptions[0])
           setTime(myHour, myMinute, mySecond, day(), month(), year());
-        else if(option == "Set Date")
+        else if(option == menuOptions[1])
           setTime(hour(), minute(), second(), myDay, myMonth, myYear);  
         tmElements_t myTime;
         breakTime(now(), myTime);
@@ -671,16 +667,15 @@ void setDateTimeMenu(String option){
         }
         exitMenu = true;
       }
-      else if(countBtnClicks == 4){ //Opção Cancel: apenas sai do loop.
+      else if(countBtnClicks == 4){             //Opção CANCEL
         exitMenu = true;
       }
     }
-
     //------------------------------------------------------------------------------
-    //Cursor piscando sobre as horas ou dia do mês
+    //Cursor piscando sobre as HORAS ou DIA
     if(countBtnClicks == 0){
-      if(option == "Set Time"){       //Ajuste das horas
-        if(myHour != lastHour){
+      if(option == menuOptions[0]){           //Ajuste das HORAS
+        if(myHour != lastHour){           //Só atualiza LCD se for necessário
           lastHour = myHour;      
           lcd.setCursor(6,2);
           if(myHour < 10)
@@ -694,18 +689,18 @@ void setDateTimeMenu(String option){
             myHour++;
           else
             myHour = 0;
-          delay(delayBtn);
+          delay(DELAY_BTN);
         }
         else if( downBtn.isPressed() ){
           if(myHour > 0)
             myHour--;
           else
             myHour = 23;
-          delay(delayBtn);
+          delay(DELAY_BTN);
         }
       }     
-      else if(option == "Set Date"){      //Ajuste do dia do mês
-        if(myDay != lastDay){
+      else if(option == menuOptions[1]){      //Ajuste do DIA
+        if(myDay != lastDay){             //Só atualiza LCD se for necessário
           lastDay = myDay;      
           lcd.setCursor(5,2);
           if(myDay < 10)
@@ -719,23 +714,22 @@ void setDateTimeMenu(String option){
             myDay++;
           else
             myDay = 1;
-          delay(delayBtn);
+          delay(DELAY_BTN);
         }
         else if( downBtn.isPressed() ){
           if(myDay > 1)
             myDay--;
           else
             myDay = 31;
-          delay(delayBtn);
+          delay(DELAY_BTN);
         }
       }
     }
-
     //------------------------------------------------------------------------------
-    //Cursor piscando sobre os minutos ou sobre o mês
+    //Cursor piscando sobre os MINUTOS ou MÊS
     else if(countBtnClicks == 1){
-      if(option == "Set Time"){       //Ajuste das minutos
-        if(myMinute != lastMin){
+      if(option == menuOptions[0]){           //Ajuste das MINUTOS
+        if(myMinute != lastMin){          //Só atualiza LCD se for necessário
           lastMin = myMinute;      
           lcd.setCursor(8,2);
           printTimeDigits(myMinute);
@@ -747,18 +741,18 @@ void setDateTimeMenu(String option){
             myMinute++;
           else
             myMinute = 0;
-          delay(delayBtn);
+          delay(DELAY_BTN);
         }
         else if( downBtn.isPressed() ){
           if(myMinute > 0)
             myMinute--;
           else
             myMinute = 59;
-          delay(delayBtn);
+          delay(DELAY_BTN);
         }
       }
-      else if(option == "Set Date"){      //Ajuste do mês
-        if(myMonth != lastMonth){
+      else if(option == menuOptions[1]){      //Ajuste do MÊS
+        if(myMonth != lastMonth){         //Só atualiza LCD se for necessário
           lastMonth = myMonth;
           lcd.setCursor(7,2);
           printDateDigits(myMonth, DOT_SEPARATOR);
@@ -770,23 +764,23 @@ void setDateTimeMenu(String option){
             myMonth++;
           else
             myMonth = 1;
-          delay(delayBtn);
+          delay(DELAY_BTN);
         }
         else if( downBtn.isPressed() ){
           if(myMonth > 1)
             myMonth--;
           else
             myMonth = 12;
-          delay(delayBtn);
+          delay(DELAY_BTN);
         }
       }
     }
 
     //------------------------------------------------------------------------------
-    //Cursor piscando sobre os segundos ou sobre o ano
+    //Cursor piscando sobre os SEGUNDOS ou ANO
     else if(countBtnClicks == 2){
-      if(option == "Set Time"){       //Ajuste das minutos
-        if(mySecond != lastSec){
+      if(option == menuOptions[0]){           //Ajuste dos SEGUNDOS
+        if(mySecond != lastSec){          //Só atualiza LCD se for necessário
           lastSec = mySecond;      
           lcd.setCursor(11,2);
           printTimeDigits(mySecond);
@@ -798,18 +792,18 @@ void setDateTimeMenu(String option){
             mySecond++;
           else
             mySecond = 0;
-          delay(delayBtn);
+          delay(DELAY_BTN);
         }
         else if( downBtn.isPressed() ){
           if(mySecond > 0)
             mySecond--;
           else
             mySecond = 59;
-          delay(delayBtn);
+          delay(DELAY_BTN);
         }
       }
-      else if(option == "Set Date"){      //Ajuste do ano
-        if(myYear != lastYear){
+      else if(option == menuOptions[1]){      //Ajuste do ANO
+        if(myYear != lastYear){           //Só atualiza LCD se for necessário
           lastYear = myYear;
           lcd.setCursor(10,2);
           printDateDigits(myYear, DOT_SEPARATOR);
@@ -821,14 +815,14 @@ void setDateTimeMenu(String option){
             myYear++;
           else
             myYear = 2015;
-          delay(delayBtn);
+          delay(DELAY_BTN);
         }
         else if( downBtn.isPressed() ){
           if(myYear > 2015)
             myYear--;
           else
             myYear = 2099;
-          delay(delayBtn);
+          delay(DELAY_BTN);
         }
       }
     }
@@ -838,25 +832,21 @@ void setDateTimeMenu(String option){
     else if(countBtnClicks == 3){
       lcd.noBlink();
       lcd.setCursor(0,3);
-      lcd.print('>');
+      lcd.print(SELECTOR);
     }
 
     //------------------------------------------------------------------------------
     //Cursor na opção Cancel
     else if(countBtnClicks == 4){
-      lcd.setCursor(0,3);           //Apaga o seletor que estava na opção Save
-      lcd.print(" ");
-      lcd.setCursor(13,3);          //Escreve novo seletor na opção Cancel
-      lcd.print('>');
+      lcd.setCursor(0,3);               //Apaga o seletor que estava na opção Save
+      lcd.print(BLANK_CHAR);
+      lcd.setCursor(13,3);              //Escreve novo seletor na opção Cancel
+      lcd.print(SELECTOR);
     }
     
   }//while
   lcd.noBlink();
-}//function
-
-
-
-
+}//setDateTimeMenu()
 
 void printSetTimeView(){
   lcd.clear();
