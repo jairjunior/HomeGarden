@@ -967,6 +967,136 @@ int lightsMenu(){
   
 }//lightsMenu()
 
+/******************************************************************************
+ * 
+ * ENABLE/DISABLE OUTPUT - Cria MENU para habilitar ou desabilitar uma saída
+ * 
+ *
+ *****************************************************************************/
+int enableOutput(int output){
+ bool enable = false;
+ bool exitMenu = false;
+ int page = 0, lastPage = 1, maxPages;
+ int cursorPosition = 1, lastCursorPosition = 0;
+ const int lines = 2;
+ const int numDisabledOpt = 2, numEnabledOpt = 3;
+ const String enabledOptions[numEnabledOpt] = {"Config" ,"Disable" ,"Exit"};
+  const String disabledOptions[numDisabledOpt] = {"Enable", "Exit"};
+
+  lcd.clear();
+  //Escreve o nome do Output a ser configurado
+  //Ajusta variável enable de acordo com o status do Output
+  if(output == 1){
+    lcd.setCursor(6,0);
+    lcd.print("LIGHT 1");
+    enable = light1.enable;
+  }
+  else if(output == 2){
+    lcd.setCursor(6,0);
+    lcd.print("LIGHT 2");
+    enable = light2.enable;
+  }
+  //Escreve o Status do Output (Enabled ou Disabled)
+  //E configura o número de páginas de acordo com as opções do menu
+  if(enable){
+    maxPages = numEnabledOpt - lines;       //2 páginas (0 e 1)
+    lcd.setCursor(0,1);
+    lcd.print("Status: Enabled");
+  }
+  else{
+    maxPages = numDisabledOpt - lines;     //somente 1 página (page 0)
+    lcd.setCursor(0,1);
+    lcd.print("Status: Disabled");
+  }
+  while( menuBtn.isPressed() );
+
+  while(!exitMenu){
+    //Atualiza as opções do menu de acordo com a página
+    if(enable){
+      if(page != lastPage){
+        lastPage = page;
+        lcd.setCursor(2,2);
+        lcd.print(enabledOptions[ (lines-2)+page ]);
+        lcd.setCursor(2,3);
+        lcd.print(enabledOptions[ (lines-1)+page ]);
+      }
+    }
+    else{
+      if(page != lastPage){
+        lastPage = page;
+        lcd.setCursor(2,2);
+        lcd.print(disabledOptions[ (lines-2)+page ]);
+        lcd.setCursor(2,3);
+        lcd.print(disabledOptions[ (lines-1)+page ]);
+      }
+    }
+    //Reposiciona cursor quando necessário
+    if(cursorPosition == 1){
+      if(cursorPosition != lastCursorPosition){
+        lastCursorPosition = cursorPosition;
+        lcd.setCursor(1,3);
+        lcd.print(BLANK_CHAR);
+        lcd.setCursor(1,2);
+        lcd.print(SELECTOR);
+      }
+    }
+    else if(cursorPosition == 2){
+      if(cursorPosition != lastCursorPosition){
+        lastCursorPosition = cursorPosition;
+        lcd.setCursor(1,2);
+        lcd.print(BLANK_CHAR);
+        lcd.setCursor(1,3);
+        lcd.print(SELECTOR);
+      }
+    }
+    //Botão MENU
+    if( menuBtn.isPressed() )
+      exitMenu = true;
+    //Botão UP
+    else if( upBtn.isPressed() ){
+        if(cursorPosition == lines) 
+          cursorPosition--;
+        else if( (cursorPosition == 1) && (page > 0) )
+          page--;
+        else if( (cursorPosition == 1) && (page == 0) ){ 
+          cursorPosition++;
+          page = maxPages;
+        }
+        delay(800);
+    }
+    //Botão DOWN
+    else if( downBtn.isPressed() ){
+      if(cursorPosition == 1)
+        cursorPosition++;
+      else if( (cursorPosition == lines) && (page < maxPages) )
+        page++;
+      else if( (cursorPosition == lines) && (page == maxPages) ){
+        page = 0;
+        cursorPosition = 1;
+      }
+      delay(800);
+    }
+  }//while
+
+  if(enable){
+    if( (page + cursorPosition - 1) == 0 )
+      return CONFIG_OPT;
+    else if( (page + cursorPosition - 1) == 1 )
+      return DISABLE_OPT;
+    else if( (page + cursorPosition - 1) == 2 )
+      return EXIT_MENU;
+  }
+  else{
+    if( (page + cursorPosition - 1) == 0 )
+      return ENABLE_OPT;
+    else if( (page + cursorPosition - 1) == 1 )
+      return EXIT_MENU;
+  }
+
+  return EPIC_FAIL;
+
+}//enableDisableOutput()
+
 
 
 
