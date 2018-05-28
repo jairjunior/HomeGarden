@@ -1553,7 +1553,23 @@ void printErrorMsg(int num, String msg){
 
 
 
-// Funções auxiliares para debug que imprimem relógio e calendário via porta Serial
+
+
+
+
+
+
+
+
+
+
+
+/******************************************************************************
+ * 
+ * Funções auxiliares para debug que imprimem relógio e calendário
+ * via porta Serial.
+ *
+ *****************************************************************************/
 #if DEBUG
 void serialClockDisplay(){
   Serial.print(hour());
