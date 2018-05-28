@@ -21,7 +21,7 @@ typedef struct{
   byte daysOfWeek;
   bool enable;
   int pin;
-} TurnOnOff;
+} TurnOnOff_t;
 
 // Estrutura p/ definir posições no LCD
 typedef struct{
@@ -101,7 +101,7 @@ PushButton downBtn(downBtnPin, 50, DEFAULT_STATE_HIGH);
 //VARIÁVEIS GLOBAIS DE USO GERAL DO PROGRAMA
 unsigned long lastUpdate = 0;                         //controla a atualização do LCD na função loop()
 tmElements_t tm;                                      //Armazena tempo atual do sistema
-TurnOnOff light1, light2;                             //Armazena informações de liga/desliga dos dispositivos
+TurnOnOff_t *lights;                                  //Armazena hora e dias p/ ligar/desligar luzes
 int tCol = 0, tRow = 2, dCol = 0, dRow = 3;           //Onde serão impressos data e hora no LCD
 
 // Constantes
@@ -142,10 +142,11 @@ void setup(){
   #endif
 
   // Configura pinos para as lâmpadas como saída
-  light1->pin = 11;
-  light2->pin = 12;
-  pinMode(light1->pin, OUTPUT);
-  pinMode(light2->pin, OUTPUT);
+  lights = (TurnOnOff_t*) malloc( sizeof(TurnOnOff_t) * 2 );
+  lights[0].pin = 11;
+  lights[1].pin = 12;
+  pinMode(lights[0].pin, OUTPUT);
+  pinMode(lights[1].pin, OUTPUT);
 
   lcd.createChar(0, blockChar);
   lcd.createChar(1, checkChar);
@@ -226,35 +227,18 @@ void loop(){
 
     //Opção LIGHTS
     else if(menuOption == menuOptions[2]){
-      int output = lightsMenu();  //Retorna 1 (light1), 2 (light2) ou EXIT_MENU
-      #if DEBUG
-        if(output != EXIT_MENU){
-          Serial.print("Config Light ");
-          Serial.println(output);
-        }
-        else
-          Serial.println("Exit Menu Lights.");
-      #endif
-      
+      int output = lightsMenu();  //Retorna 0 (lights[0]), 1 (light[1]) ou EXIT_MENU
       if(output != EXIT_MENU){
-        int enableOpt = enableOutput(output);//Retorna ENABLE_OPT, DISABLE_OPT, CONFIG_OPT, EXIT_MENU 
+        int enableOpt = enableOutput(output);   //Retorna ENABLE_OPT, DISABLE_OPT, CONFIG_OPT, EXIT_MENU 
         if( (enableOpt == ENABLE_OPT) || (enableOpt == CONFIG_OPT) ){
-          int optTime = setOnOffTime(output);    //Retorna NEXT_OPT ou CANCEL_OPT
+          int optTime = setOnOffTime(output);   //Retorna NEXT_OPT ou CANCEL_OPT
           if(optTime == NEXT_OPT)
-            int optDays = setOnOffDays(output);  //Retorna SAVE_OPT ou CANCEL_OPT
-          #if DEBUG
-            if(output == 1)
-              serialOutputOnOff(&light1);
-            else if(output == 2)
-              serialOutputOnOff(&light2);
-          #endif
+            int optDays = setOnOffDays(output); //Retorna SAVE_OPT ou CANCEL_OPT
         }
       }
       printMainView();
       while( menuBtn.isPressed() );
     }
-
-
     //Opção WATERING
     else if(menuOption == menuOptions[3]){
       printMainView();
@@ -961,9 +945,9 @@ int lightsMenu(){
   }//while
   
   if(selectorPosition == 1)
-    return 1;
+    return 0;
   else if(selectorPosition == 2)
-    return 2;
+    return 1;
   else
     return EXIT_MENU;
   
@@ -972,7 +956,6 @@ int lightsMenu(){
 /******************************************************************************
  * 
  * ENABLE/DISABLE OUTPUT - Cria MENU para habilitar ou desabilitar uma saída
- * 
  *
  *****************************************************************************/
 int enableOutput(int outputNum){
@@ -988,16 +971,11 @@ int enableOutput(int outputNum){
   lcd.clear();
   //Escreve o nome do Output a ser configurado
   //Ajusta variável enable de acordo com o status do Output
-  if(outputNum == 1){
-    lcd.setCursor(6,0);
-    lcd.print("LIGHT 1");
-    enable = light1.enable;
-  }
-  else if(outputNum == 2){
-    lcd.setCursor(6,0);
-    lcd.print("LIGHT 2");
-    enable = light2.enable;
-  }
+  lcd.setCursor(6,0);
+  lcd.print("LIGHT ");
+  lcd.print(outputNum + 1);
+  enable = lights[outputNum].enable;
+
   //Escreve o Status do Output (Enabled ou Disabled)
   //E configura o número de páginas de acordo com as opções do menu
   if(enable){
@@ -1007,7 +985,7 @@ int enableOutput(int outputNum){
     lcd.print(ENABLED_STR);
   }
   else{
-    maxPages = numDisabledOpt - lines;     //somente 1 página (page 0)
+    maxPages = numDisabledOpt - lines;      //somente 1 página (page 0)
     lcd.setCursor(0,1);
     lcd.print("Status: ");
     lcd.print(DISABLED_STR);
@@ -1129,22 +1107,12 @@ int setOnOffTime(int outputNum){
     
     else if( menuBtn.dualFunction() == -1 ){    //Click LONGO (ENTER)
       if(cursorPosition == 7){                  //Cursor na opção NEXT
-        if(outputNum == 1){
-          light1.onHour = onHour;
-          light1.onMinute = onMin;
-          light1.onSecond = onSec;
-          light1.offHour = offHour;
-          light1.offMinute = offMin;
-          light1.offSecond = offSec;
-        }
-        else if(outputNum == 2){
-          light2.onHour = onHour;
-          light2.onMinute = onMin;
-          light2.onSecond = onSec;
-          light2.offHour = offHour;
-          light2.offMinute = offMin;
-          light2.offSecond = offSec;
-        }
+        lights[outputNum].onHour = onHour;
+        lights[outputNum].onMinute = onMin;
+        lights[outputNum].onSecond = onSec;
+        lights[outputNum].offHour = offHour;
+        lights[outputNum].offMinute = offMin;
+        lights[outputNum].offSecond = offSec;
         retValue = NEXT_OPT;
         exitMenu = true;
       }
@@ -1434,29 +1402,20 @@ int setOnOffDays(int outputNum){
         if(daysChecked[cursorPosition]){
           lcd.print(BLANK_CHAR);
           daysChecked[cursorPosition] = false;
-          if(outputNum == 1)
-            light1.daysOfWeek &= ~(1 << cursorPosition); 
-          else if(outputNum == 2)
-            light2.daysOfWeek &= ~(1 << cursorPosition);
+          lights[outputNum].daysOfWeek &= ~(1 << cursorPosition); 
         }
         else{
           lcd.write(byte(1));
           daysChecked[cursorPosition] = true;
-          if(outputNum == 1)
-            light1.daysOfWeek |= 1 << cursorPosition; 
-          else if(outputNum == 2)
-            light2.daysOfWeek |= 1 << cursorPosition;
+          lights[outputNum].daysOfWeek |= 1 << cursorPosition;
         }
       }
     }
     else if( menuBtn.dualFunction() == -1 ){    //click LONGO (enter)
       if(cursorPosition == 7){
+        lights[outputNum].enable = true;
         retValue = SAVE_OPT;
         exitMenu = true;
-        if(outputNum == 1)
-          light1.enable = true;
-        else if (outputNum == 2)
-          light2.enable = true;
       }
       else if(cursorPosition == 8){
         retValue = CANCEL_OPT;
@@ -1581,7 +1540,7 @@ void serialClockDisplay(){
   Serial.print(year()); 
   Serial.println(); 
 }
-void serialOutputOnOff(TurnOnOff *output){
+/*void serialOutputOnOff(TurnOnOff_t *output){
   Serial.print("Turn On Time: ");
   Serial.print(output->onHour);
   printDigits(output->onMinute);
@@ -1602,7 +1561,7 @@ void serialOutputOnOff(TurnOnOff *output){
     }
   }
   Serial.println("");
-}
+}*/
 void printDigits(int digits){
   Serial.print(":");
   if(digits < 10)
