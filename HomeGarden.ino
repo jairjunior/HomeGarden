@@ -9,6 +9,32 @@
 #define DEBUG false
 
 
+// Estrutura p/ armazenar horário e dias para ligar/desligar coisas
+// São 14 bytes para armazenamento
+typedef struct{
+  byte onHour;
+  byte onMinute;
+  byte onSecond;
+  byte offHour;
+  byte offMinute;
+  byte offSecond;
+  bool sun;
+  bool mon;
+  bool tue;
+  bool wed;
+  bool thu;
+  bool fri;
+  bool sat;
+  bool enable;
+} turnOnOff;
+
+// Estrutura p/ definir posições no LCD
+typedef struct{
+  int col;
+  int row;
+} LcdPosition;
+
+
 // Configurações para printar hora e data no LCD
 #define PRINT_SECONDS         B00000001
 #define PRINT_TEXT_DATE       B00000010
@@ -17,6 +43,14 @@
 #define PRINT_FULL_YEAR       B00010000
 #define DOT_SEPARATOR         B00100000
 #define DASH_SEPARATOR        B01000000
+
+
+// Opções para retorno das funções
+#define ENABLE_OPT      496
+#define DISABLE_OPT     902
+#define CONFIG_OPT      277
+#define EXIT_MENU       333
+#define EPIC_FAIL       666
 
 
 // Protótipo de Funções
@@ -31,10 +65,13 @@ void printProjectName(int col, int row);
 void printProjectVersion(int col, int row);
 String mainMenu();
 void setDateTimeMenu(String option);
+int lightsMenu();
+int enableOutput(int num);
+String setOnOffTime(int num);
+String setOnOffDays(int num);
 void printSetTimeView();
 void printSetDateView();
 void printSaveCancelOptions();
-void OutputsMenu();
 void printErrorMsg(int num, String msg);
 #if DEBUG
   void serialClockDisplay();
@@ -42,18 +79,15 @@ void printErrorMsg(int num, String msg);
 #endif
 
 
-// Strings contendo nome e versão do projeto
-const String projectName = "GrowSystem";
-const String projectVersion = "v1.0";
-
-
 // Configurações para LCD
 // Número de linhas e de colunas, Pinos a serem usados
-// Instância do objeto LiquidCrystal, Caractere especial
+// Instância do objeto LiquidCrystal, caracteres especiais
 uint8_t lcdNumCol = 20, lcdNumRow = 4;
 const int rs = 2, en = 3, d4 = 4, d5 = 5, d6 = 6, d7 = 7;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
-byte block[8] = { B11111,B11111,B11111,B11111,B11111,B11111,B11111,B11111 };
+byte defaultPrintConfigs =  PRINT_SECONDS | PRINT_TEXT_DATE | PRINT_TEXT_TIME | DOT_SEPARATOR | PRINT_WEEK_DAY;
+byte blockChar[8] = { B11111,B11111,B11111,B11111,B11111,B11111,B11111,B11111 };
+byte checkChar[8] = {0B00000,0B00000,0B00000,0B00001,0B10010,0B10100,0B11000,0B00000};
 
 
 // Configurações dos botões.
@@ -67,11 +101,27 @@ PushButton downBtn(downBtnPin, 50, DEFAULT_STATE_HIGH);
 
 
 //VARIÁVEIS GLOBAIS DE USO GERAL DO PROGRAMA
-unsigned long lastUpdate = 0;                         //controla a atualização do LCD a cada 1s
-tmElements_t tm;                                      //Armazena tempo do sistema
+unsigned long lastUpdate = 0;                         //controla a atualização do LCD na função loop()
+tmElements_t tm;                                      //Armazena tempo atual do sistema
+turnOnOff light1, light2;                             //Armazena informações de liga/desliga dos dispositivos
 int tCol = 0, tRow = 2, dCol = 0, dRow = 3;           //Onde serão impressos data e hora no LCD
+
+// Constantes
+const String PROJECT_NAME_STR = "GrowSystem";
+const String PROJECT_VERSION_STR = "v1.0";
+const int menuNumOpt = 6;
+const String menuOptions[menuNumOpt] = {"Set System Time", "Set System Date", "Lights", "Water Pumps", "Sensors", "Exit"};
 const String weekDay[7] = {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"};
-byte defaultPrintConfigs =  PRINT_SECONDS | PRINT_TEXT_DATE | PRINT_TEXT_TIME | DOT_SEPARATOR | PRINT_WEEK_DAY;
+const String SAVE_STR = "Save";
+const String NEXT_STR = "Next";
+const String BACK_STR = "Back";
+const String CANCEL_STR = "Cancel";
+const String ENABLED_STR = "Enabled";
+const String DISABLED_STR = "Disabled";
+const char SELECTOR = '>', BLANK_CHAR = ' ';
+const int DELAY_BTN = 400;
+
+// Variáveis para tratamento de erros
 int errorNum;
 String errorMsg;
 
