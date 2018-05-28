@@ -1097,8 +1097,253 @@ int enableOutput(int output){
 
 }//enableDisableOutput()
 
+/******************************************************************************
+ * 
+ * SET ON/OFF TIME - ajusta o horário para ligar ou desligar uma lâmpada
+ *
+ *****************************************************************************/
+String setOnOffTime(int num){
+ bool exitMenu = false;
+ int cursorPosition = 1, lastCursorPosition = 0;
+ byte onHour = 0, onMin = 0, onSec = 0;
+ byte offHour = 0, offMin = 0, offSec = 0;
+ byte lastOnHour = onHour, lastOnMin = onMin, lastOnSec = onSec;
+ byte lastOffHour = offHour, lastOffMin = offMin, lastOffSec = offSec;
+ String retValue = "";
 
+  printOnOffTimeView(num);
+  while( menuBtn.isPressed() );
+  
+  while(!exitMenu){
 
+    if( menuBtn.dualFunction() == 1 ){          //Click CURTO (muda de opção no menu)
+      if(cursorPosition < 8)
+        cursorPosition++;
+      else
+        cursorPosition = 1;
+    }
+    
+    else if( menuBtn.dualFunction() == -1 ){    //Click LONGO (ENTER)
+      if(cursorPosition == 7){                  //Cursor na opção NEXT
+        if(num == 1){
+          light1.onHour = onHour;
+          light1.onMinute = onMin;
+          light1.onSecond = onSec;
+          light1.offHour = offHour;
+          light1.offMinute = offMin;
+          light1.offSecond = offSec;
+        }
+        else if(num == 2){
+          light2.onHour = onHour;
+          light2.onMinute = onMin;
+          light2.onSecond = onSec;
+          light2.offHour = offHour;
+          light2.offMinute = offMin;
+          light2.offSecond = offSec;
+        }
+        retValue = NEXT_STR;
+        exitMenu = true;
+      }
+      else if(cursorPosition == 8){             //Cursor na opção CANCEL
+        retValue = CANCEL_STR;
+        exitMenu = true;
+      }
+    }
+
+    //------------------------------------------------------------------------------
+    //Cursor piscando sobre a HORA de LIGAR
+    if(cursorPosition == 1){
+      if(cursorPosition != lastCursorPosition){ //Só reposiciona cursor se for necessário
+        lastCursorPosition = cursorPosition;
+        lcd.setCursor(13,3);                    //Apaga cursor da opção Cancel
+        lcd.print(BLANK_CHAR);
+        lcd.setCursor(11,1);                    //Reposiciona cursor sobre as HORAS de LIGAR
+        lcd.blink();                            //Cursor piscando
+      }
+      if(onHour != lastOnHour){                 //Só atualiza LCD se for necessário
+        lastOnHour = onHour;
+        lcd.setCursor(10,1);
+        if(onHour < 10)
+          lcd.print("0");
+        lcd.print(onHour);
+        lcd.setCursor(11,1);
+      }      
+      if( upBtn.isPressed() ){                  //Incrementa HORAS de LIGAR
+          if(onHour < 23)
+            onHour++;
+          else
+            onHour = 0;
+          delay(DELAY_BTN);
+      }
+      else if( downBtn.isPressed() ){           //Decrementa HORAS de LIGAR
+          if(onHour > 0)
+            onHour--;
+          else
+            onHour = 23;
+          delay(DELAY_BTN);
+      }
+    }
+    //------------------------------------------------------------------------------
+    //Cursor piscando sobre o MINUTO de LIGAR
+    else if(cursorPosition == 2){
+      if(cursorPosition != lastCursorPosition){ //Só reposiciona cursor se for necessário
+        lastCursorPosition = cursorPosition;
+        lcd.setCursor(14,1);
+      }
+      if(onMin != lastOnMin){                   //Só atualiza LCD se for necessário
+        lastOnMin = onMin;
+        lcd.setCursor(12,1);
+        printTimeDigits(onMin);
+        lcd.setCursor(14,1);
+      }
+      if( upBtn.isPressed() ){                  //Incrementa MINUTOS de LIGAR
+          if(onMin < 59)
+            onMin++;
+          else
+            onMin = 0;
+          delay(DELAY_BTN);
+      }
+      else if( downBtn.isPressed() ){           //Decrementa MINUTOS de LIGAR
+          if(onMin > 0)
+            onMin--;
+          else
+            onMin = 59;
+          delay(DELAY_BTN);
+      }
+    }
+    //------------------------------------------------------------------------------
+    //Cursor piscando sobre o SEGUNDO de LIGAR
+    else if(cursorPosition == 3){
+      if(cursorPosition != lastCursorPosition){ //Só reposiciona cursor se for necessário
+        lastCursorPosition = cursorPosition;
+        lcd.setCursor(17,1);
+      }
+      if(onSec != lastOnSec){                   //Só atualiza LCD se for necessário
+        lastOnSec = onSec;
+        lcd.setCursor(15,1);
+        printTimeDigits(onSec);
+        lcd.setCursor(17,1);
+      }
+      if( upBtn.isPressed() ){                  //Incrementa SEGUNDOS de LIGAR
+          if(onSec < 59)
+            onSec++;
+          else
+            onSec = 0;
+          delay(DELAY_BTN);
+      }
+      else if( downBtn.isPressed() ){           //Decrementa SEGUNDOS de LIGAR
+          if(onSec > 0)
+            onSec--;
+          else
+            onSec = 59;
+          delay(DELAY_BTN);
+      }
+    }
+    //------------------------------------------------------------------------------
+    //Cursor piscando sobre a HORA de DESLIGAR
+    else if(cursorPosition == 4){
+      if(cursorPosition != lastCursorPosition){ //Só reposiciona cursor se for necessário
+        lastCursorPosition = cursorPosition;
+        lcd.setCursor(11,2);
+      }
+      if(offHour != lastOffHour){               //Só atualiza LCD se for necessário
+        lastOffHour = offHour;
+        lcd.setCursor(10,1);
+        if(offHour < 10)
+          lcd.print("0");
+        lcd.print(offHour);
+        lcd.setCursor(11,2);
+      }
+      if( upBtn.isPressed() ){                  //Incrementa HORAS de DESLIGAR
+          if(offHour < 23)
+            offHour++;
+          else
+            offHour = 0;
+          delay(DELAY_BTN);
+      }
+      else if( downBtn.isPressed() ){           //Decrementa HORAS de DESLIGAR
+          if(offHour > 0)
+            offHour--;
+          else
+            offHour = 23;
+          delay(DELAY_BTN);
+      }
+    }
+    //------------------------------------------------------------------------------
+    //Cursor piscando sobre o MINUTO de DESLIGAR
+    else if(cursorPosition == 5){
+      if(cursorPosition != lastCursorPosition){ //Só reposiciona cursor se for necessário
+        lastCursorPosition = cursorPosition;
+        lcd.setCursor(14,2);
+      }
+      if(offMin != lastOffMin){                 //Só atualiza LCD se for necessário
+        lastOffMin = offMin;
+        lcd.setCursor(12,2);
+        printTimeDigits(offMin);
+        lcd.setCursor(14,2);
+      }
+      if( upBtn.isPressed() ){                  //Incrementa MINUTOS de DESLIGAR
+          if(offMin < 59)
+            offMin++;
+          else
+            offMin = 0;
+          delay(DELAY_BTN);
+      }
+      else if( downBtn.isPressed() ){           //Decrementa MINUTOS de DESLIGAR
+          if(offMin > 0)
+            offMin--;
+          else
+            offMin = 59;
+          delay(DELAY_BTN);
+      }
+    }
+    //------------------------------------------------------------------------------
+    //Cursor piscando sobre o SEGUNDO de DESLIGAR
+    else if(cursorPosition == 6){
+      if(cursorPosition != lastCursorPosition){ //Só reposiciona cursor se for necessário
+        lastCursorPosition = cursorPosition;
+        lcd.setCursor(17,2);
+      }
+      if(offSec != lastOffSec){                 //Só atualiza LCD se for necessário
+        lastOffSec = offSec;
+        lcd.setCursor(15,2);
+        printTimeDigits(offSec);
+        lcd.setCursor(17,2);
+      }
+      if( upBtn.isPressed() ){                  //Incrementa SEGUNDOS de DESLIGAR
+          if(offSec < 59)
+            offSec++;
+          else
+            offSec = 0;
+          delay(DELAY_BTN);
+      }
+      else if( downBtn.isPressed() ){           //Decrementa SEGUNDOS de DESLIGAR
+          if(offSec > 0)
+            offSec--;
+          else
+            offSec = 59;
+          delay(DELAY_BTN);
+      }
+    }
+    //------------------------------------------------------------------------------
+    //Cursor na opção NEXT
+    else if(cursorPosition == 7){
+      lcd.noBlink();                            //Cursor para de piscar
+      lcd.setCursor(0,3);                       //Coloca seletor em NEXT
+      lcd.print(SELECTOR);
+    }
+    //------------------------------------------------------------------------------
+    //Cursor na opção CANCEL
+    else if(cursorPosition == 8){
+      lcd.setCursor(0,3);                       //Apaga seletor que estava na opção Next
+      lcd.print(BLANK_CHAR);
+      lcd.setCursor(13,3);                      //Coloca seletor em CANCEL
+      lcd.print(SELECTOR);
+    }
+  }//while
+  lcd.noBlink();
+  return retValue;
+}//setOnOffTime()
 
 
 void printErrorMsg(int num, String msg){
