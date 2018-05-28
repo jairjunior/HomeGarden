@@ -483,54 +483,51 @@ void printProjectVersion(int col, int row){
 
 
 /******************************************************************************
+ ******************************************************************************
+ ******************************************************************************
  * 
  * Função MAIN MENU - cria o menu principal na tela
  * Retorna uma String com o menu que foi selecionado
  *
  *****************************************************************************/
 String mainMenu(){
- int numberOfOptions = 6;
- const String options[numberOfOptions] = {"Set Time", "Set Date", "Outputs", "Watering", "Sensors", "Exit"};
  const int lines = 3;
- const char selector = '>';
  int selectorPosition = 1;
  int page = 0, lastPage = 1;
- int maxPages = numberOfOptions - lines;
+ int maxPages = menuNumOpt - lines;
  bool exitMenu = false;
+
+  #if DEBUG
+    Serial.println("MAIN MENU");
+  #endif
 
   while(!exitMenu){
 
     //Verifica se houve mudança de página
     if(page != lastPage){
-
       lastPage = page;
-      
       lcd.clear();
       lcd.setCursor(8,0);
       lcd.print("MENU");
-    
       lcd.setCursor(2,1);
-      lcd.print(options[ (lines-3)+page ]);
-      
+      lcd.print(menuOptions[ (lines-3)+page ]);
       lcd.setCursor(2,2);
-      lcd.print(options[ (lines-2)+page ]);
-      
+      lcd.print(menuOptions[ (lines-2)+page ]);
       lcd.setCursor(2,3);
-      lcd.print(options[ (lines-1)+page ]);
+      lcd.print(menuOptions[ (lines-1)+page ]);
 
       if(selectorPosition == 1){
         lcd.setCursor(1,1);
-        lcd.print(selector);
+        lcd.print(SELECTOR);
       }
       else if(selectorPosition == 2){
         lcd.setCursor(1,2);
-        lcd.print(selector);
+        lcd.print(SELECTOR);
       }
       else if(selectorPosition == 3){
         lcd.setCursor(1,3);
-        lcd.print(selector);
+        lcd.print(SELECTOR);
       }
-
       while(menuBtn.isPressed());
       delay(800);
     }
@@ -539,22 +536,21 @@ String mainMenu(){
     if( menuBtn.isPressed() ){
       exitMenu = true;
     }
-
     //Botão UP
     else if( upBtn.isPressed() ){
       if(selectorPosition == 3){
         lcd.setCursor(1,3);
-        lcd.print(" ");
+        lcd.print(BLANK_CHAR);
         lcd.setCursor(1,2);
-        lcd.print(selector);
+        lcd.print(SELECTOR);
         selectorPosition = 2;
         delay(800);
       }
       else if(selectorPosition == 2){
         lcd.setCursor(1,2);
-        lcd.print(" ");
+        lcd.print(BLANK_CHAR);
         lcd.setCursor(1,1);
-        lcd.print(selector);
+        lcd.print(SELECTOR);
         selectorPosition = 1;
         delay(800);
       }
@@ -567,22 +563,21 @@ String mainMenu(){
         }
       }
     }
-
     //Botão DOWN
     else if( downBtn.isPressed() ){
       if(selectorPosition == 1){
         lcd.setCursor(1,1);
-        lcd.print(" ");
+        lcd.print(BLANK_CHAR);
         lcd.setCursor(1,2);
-        lcd.print(selector);
+        lcd.print(SELECTOR);
         selectorPosition = 2;
         delay(800);
       }
       else if(selectorPosition == 2){
         lcd.setCursor(1,2);
-        lcd.print(" ");
+        lcd.print(BLANK_CHAR);
         lcd.setCursor(1,3);
-        lcd.print(selector);
+        lcd.print(SELECTOR);
         selectorPosition = 3;
         delay(800);
       }
@@ -599,7 +594,7 @@ String mainMenu(){
   }//while
 
   lcd.clear();
-  return options[ page + selectorPosition - 1 ];
+  return menuOptions[ page + selectorPosition - 1 ];
   
 }//mainMenu()
 
