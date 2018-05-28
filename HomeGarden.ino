@@ -126,8 +126,10 @@ int errorNum;
 String errorMsg;
 
 /********************************************************************************
+ ********************************************************************************
+ ********************************************************************************
  * 
- * Função SETUP - Roda uma vez ao inicializar.
+ * SETUP - Roda uma vez ao inicializar.
  * Configura pinos de entrada e saída dos botões
  * Configura LCD, mostra mensagem e barra de inicialização
  * Ajusta tempo do RTC vi software (opcional)
@@ -143,7 +145,8 @@ void setup(){
 
   pinMode(LED_BUILTIN, OUTPUT);
 
-  lcd.createChar(0, block);
+  lcd.createChar(0, blockChar);
+  lcd.createChar(1, checkChar);
   lcd.begin(lcdNumCol, lcdNumRow);  //Inicializa LCD 20x4
   printProjectName(5,0);            //Imprime nome do projeto
   printProjectVersion(8,1);         //Imprime versão do projeto
@@ -163,7 +166,7 @@ void setup(){
   setSyncProvider(RTC.get);
   if (timeStatus() != timeSet){
     #if DEBUG
-      Serial.println("Unable to sync with the RTC");
+      Serial.println("Unable to sync with the RTC.");
     #endif
     lcd.clear();
     lcd.print("ERRO 743:");
@@ -179,14 +182,12 @@ void setup(){
     setSyncInterval(60);
     
     #if DEBUG
-      Serial.println("RTC has set the system time");
+      Serial.println("RTC has set the system time.");
     #endif
   }
   breakTime(now(), tm);
   printMainView();
 }
-
-
 
 /********************************************************************************
  * 
