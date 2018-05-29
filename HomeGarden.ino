@@ -28,8 +28,7 @@ typedef struct{
 typedef struct{
   int col;
   int row;
-} LcdPosition;
-
+} LcdPosition_t;
 
 // Configurações para printar hora e data no LCD
 #define PRINT_SECONDS         B00000001
@@ -1337,8 +1336,8 @@ int setOnOffDays(TurnOnOff_t *output){
  bool exitMenu = false;
  unsigned int cursorPosition = 0, lastCursorPosition = 1;
  int retValue;
- LcdPosition *cursorXY = (LcdPosition*) malloc( sizeof(LcdPosition) * 9 );
- LcdPosition *checkXY = (LcdPosition*) malloc( sizeof(LcdPosition) * 7 );
+ LcdPosition_t *cursorXY = (LcdPosition_t*) malloc( sizeof(LcdPosition_t) * 9 );
+ LcdPosition_t *checkXY = (LcdPosition_t*) malloc( sizeof(LcdPosition_t) * 7 );
 
   printWeekDaysView();
   while( menuBtn.isPressed() );
