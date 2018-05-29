@@ -8,7 +8,6 @@
 #define DEBUG false
 
 // Estrutura p/ armazenar horário e dias para ligar/desligar coisas
-// São 14 bytes para armazenamento
 typedef struct{
   byte onHour;
   byte onMinute;
@@ -37,7 +36,6 @@ typedef struct{
 #define DOT_SEPARATOR         B00100000
 #define DASH_SEPARATOR        B01000000
 
-
 // Opções para retorno das funções
 #define ENABLE_OPT      496
 #define DISABLE_OPT     902
@@ -47,7 +45,6 @@ typedef struct{
 #define SAVE_OPT        777
 #define EXIT_MENU       333
 #define EPIC_FAIL       666
-
 
 // Protótipo de Funções
 void printMainView();
@@ -74,10 +71,7 @@ void printErrorMsg(int num, String msg);
   void printDigits(int digits);
 #endif
 
-
 // Configurações para LCD
-// Número de linhas e de colunas, Pinos a serem usados
-// Instância do objeto LiquidCrystal, caracteres especiais
 uint8_t lcdNumCol = 20, lcdNumRow = 4;
 const int rs = 2, en = 3, d4 = 4, d5 = 5, d6 = 6, d7 = 7;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
@@ -85,16 +79,13 @@ byte defaultPrintConfigs =  PRINT_SECONDS | PRINT_TEXT_DATE | PRINT_TEXT_TIME | 
 byte blockChar[8] = { B11111,B11111,B11111,B11111,B11111,B11111,B11111,B11111 };
 byte checkChar[8] = { B00000,B00000,B00001,B10010,B10100,B11000,B00000,B00000 };
 
-
 // Configurações dos botões.
-// Pinos dos botões e instâncias dos objetos da classe PushButton
 const int menuBtnPin = 8;
 const int upBtnPin = 9;
 const int downBtnPin = 10;
 PushButton menuBtn(menuBtnPin, 50, DEFAULT_STATE_HIGH);
 PushButton upBtn(upBtnPin, 50, DEFAULT_STATE_HIGH);
 PushButton downBtn(downBtnPin, 50, DEFAULT_STATE_HIGH);
-
 
 //VARIÁVEIS GLOBAIS DE USO GERAL DO PROGRAMA
 tmElements_t tm;                              //Armazena tempo atual do sistema
@@ -125,13 +116,11 @@ String errorMsg;
 /********************************************************************************
  ********************************************************************************
  ********************************************************************************
- * 
  * SETUP - Roda uma vez ao inicializar.
  * Configura pinos de entrada e saída dos botões
  * Configura LCD, mostra mensagem e barra de inicialização
  * Ajusta tempo do RTC vi software (opcional)
  * Sincroniza biblioteca Time com periférico externo (RTC)
- * 
  *******************************************************************************/
 void setup(){
 
@@ -157,6 +146,8 @@ void setup(){
   for(int i = 0; i < 20; i++){      //Cria animação de barra de carregamento (loading)
     lcd.write(byte(0));
     delay(200);
+    digitalWrite(lights[0].pin, !digitalRead(lights[0].pin));
+    digitalWrite(lights[1].pin, !digitalRead(lights[1].pin));
   }
   
   //Ajusta o tempo do sistema e atualiza no RTC
@@ -165,25 +156,18 @@ void setup(){
   //RTC.set( now() );
 
   //Sincroniza a biblioteca Time com a data e hora do RTC
-  //Caso a sincronização tenha falhado, exibe mensagem de erro no LCD e trava execução
   setSyncProvider(RTC.get);
   if (timeStatus() != timeSet){
+    errorNum = 743;
+    errorMsg = "Unable to sync RTC";
+    printErrorMsg(errorNum, errorMsg);
     #if DEBUG
       Serial.println("Unable to sync with the RTC.");
     #endif
-    lcd.clear();
-    lcd.print("ERRO 743:");
-    lcd.setCursor(0,1);
-    lcd.print("Nao foi possivel");
-    lcd.setCursor(0,2);
-    lcd.print("sincronizar com RTC.");
-    lcd.setCursor(0,3);
-    lcd.print("Verifique o sistema.");
     while(true);
   }
   else{
     setSyncInterval(60);
-    
     #if DEBUG
       Serial.println("RTC has set the system time.");
     #endif
@@ -195,11 +179,9 @@ void setup(){
 /********************************************************************************
  ********************************************************************************
  ********************************************************************************
- * 
  * LOOP - É repetida continuamente pelo firmware.
  * Após o boot, escreve data e hora na tela de acordo com os parâmetros da função
  * Testa botões de MENU ou de INFORMAÇÕES
- * 
  *******************************************************************************/
 void loop(){
  String menuOption = "";
@@ -210,7 +192,6 @@ void loop(){
       Serial.print("MENU option: ");
       Serial.println(menuOption);
     #endif
-
     //Opção SET SYSTEM TIME
     if(menuOption == menuOptions[0]){
       setSystemTime(menuOption);
@@ -225,13 +206,17 @@ void loop(){
     }
     //Opção LIGHTS
     else if(menuOption == menuOptions[2]){
-      int lightNum = lightsMenu();  //Retorna 0 (lights[0]), 1 (light[1]) ou EXIT_MENU
+      //Retorna 0 (lights[0]), 1 (light[1]) ou EXIT_MENU
+      int lightNum = lightsMenu();
       if (lightNum != EXIT_MENU){
-        int enableOpt = enableOutput(&lights[lightNum]);   //Retorna ENABLE_OPT, DISABLE_OPT, CONFIG_OPT, EXIT_MENU   
+        //Retorna ENABLE_OPT, DISABLE_OPT, CONFIG_OPT, EXIT_MENU
+        int enableOpt = enableOutput(&lights[lightNum]);
         if( (enableOpt == ENABLE_OPT) || (enableOpt == CONFIG_OPT) ){
-          int optTime = setOnOffTime(&lights[lightNum]);   //Retorna NEXT_OPT ou CANCEL_OPT
+          //Retorna NEXT_OPT ou CANCEL_OPT
+          int optTime = setOnOffTime(&lights[lightNum]);
           if (optTime == NEXT_OPT){
-            int optDays = setOnOffDays(&lights[lightNum]); //Retorna SAVE_OPT ou CANCEL_OPT
+            //Retorna SAVE_OPT ou CANCEL_OPT
+            int optDays = setOnOffDays(&lights[lightNum]);
             if (optDays == SAVE_OPT)
               lights[lightNum] = onOffTemp;
           }
@@ -257,8 +242,7 @@ void loop(){
     }
   }
 
-  // Só atualiza LCD depois de 1 segundo
-  // Não bloqueia execução do loop
+  // Só atualiza LCD a cada 1 segundo - Não bloqueia execução do loop
   if( (millis() - lastUpdate) > 1000 ){
     lastUpdate = millis();
     updateScreenTime(tCol, tRow, defaultPrintConfigs);
@@ -276,19 +260,18 @@ void loop(){
     #if DEBUG
       time_t currentTime = RTC.get();
       if(currentTime == 0){
-        Serial.println("Cannot read current time from RTC.");
+        Serial.println("Cannot read time from RTC.");
       }
       else{
         Serial.print("Current time on RTC: ");
-        Serial.print(currentTime);
-        Serial.print(" - ");
+        //Serial.print(currentTime);
+        //Serial.print(" - ");
         serialClockDisplay();
       }
-      serialOutputOnOff(&lights[0]);
-      serialOutputOnOff(&lights[1]);
+      //serialOutputOnOff(&lights[0]);
+      //serialOutputOnOff(&lights[1]);
     #endif
   }
-
 }//loop()
 
 /******************************************************************************
@@ -1528,8 +1511,10 @@ void printNextCancelOptions(){
  *
  *****************************************************************************/
 void printErrorMsg(int num, String msg){
-  num++;
-  msg += ".";
+  lcd.clear();
+  lcd.print(num);
+  lcd.setCursor(0,1);
+  lcd.print(msg);
 }
 
 
