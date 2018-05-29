@@ -5,7 +5,7 @@
 #include <DS1307RTC.h>        //RTC DS1307
 
 // Flag para habilitar depuração via Monitor Serial da Arduino IDE
-#define DEBUG false
+#define DEBUG true
 
 // Estrutura p/ armazenar horário e dias para ligar/desligar coisas
 typedef struct{
@@ -172,7 +172,6 @@ void setup(){
       Serial.println("RTC has set the system time.");
     #endif
   }
-  breakTime(now(), tm);
   printMainView();
 }
 
@@ -196,13 +195,11 @@ void loop(){
     if(menuOption == menuOptions[0]){
       setSystemTime(menuOption);
       printMainView();
-      while( menuBtn.isPressed() );
     }
     //Opção SET SYSTEM DATE
     else if(menuOption == menuOptions[1]){
       setSystemTime(menuOption);
       printMainView();
-      while( menuBtn.isPressed() );
     }
     //Opção LIGHTS
     else if(menuOption == menuOptions[2]){
@@ -223,23 +220,20 @@ void loop(){
         }
       }
       printMainView();
-      while( menuBtn.isPressed() );
     }
     //Opção WATERING
     else if(menuOption == menuOptions[3]){
       printMainView();
-      while( menuBtn.isPressed() );
     }
     //Opção SENSORS
     else if(menuOption == menuOptions[4]){
       printMainView();
-      while( menuBtn.isPressed() );
     }
     //Opção EXIT
     else if(menuOption == menuOptions[5]){
       printMainView();
-      while( menuBtn.isPressed() );
     }
+    while( menuBtn.isPressed() );
   }
 
   // Só atualiza LCD a cada 1 segundo - Não bloqueia execução do loop
@@ -248,13 +242,17 @@ void loop(){
     updateScreenTime(tCol, tRow, defaultPrintConfigs);
     updateScreenDate(dCol, dRow, defaultPrintConfigs);
     
-    breakTime(now(), tm);
-    if( tm.Hour == lights[0].onHour && 
-        tm.Minute == lights[0].onMinute &&
-        tm.Second == lights[0].onSecond &&
-        lights[0].daysOfWeek & (1 << tm.Wday) )
+    unsigned int shift = weekday() - 1;
+    if( hour() == (int) lights[0].onHour && 
+        minute() == (int) lights[0].onMinute &&
+        second() == (int) lights[0].onSecond &&
+        lights[0].daysOfWeek & (1 << shift) )
       digitalWrite(lights[0].pin, HIGH);
-    if(tm.Hour == lights[0].offHour && tm.Minute == lights[0].offMinute && tm.Second == lights[0].offSecond && lights[0].daysOfWeek & (1 << tm.Wday) )
+
+    if( hour() == (int) lights[0].offHour && 
+        minute() == (int) lights[0].offMinute && 
+        second() == (int) lights[0].offSecond && 
+        lights[0].daysOfWeek & (1 << shift) )
       digitalWrite(lights[0].pin, LOW);
 
     #if DEBUG
@@ -270,6 +268,14 @@ void loop(){
       }
       //serialOutputOnOff(&lights[0]);
       //serialOutputOnOff(&lights[1]);
+
+      /*Serial.print(hour());
+      Serial.print(":");
+      Serial.print(minute());
+      Serial.print(":");
+      Serial.print(second());
+      Serial.print(" - ");
+      Serial.println(weekday());*/
     #endif
   }
 }//loop()
@@ -337,7 +343,6 @@ void updateScreenDate(int col, int row, byte configs){
     offset += 5;
   }
   
-
   if(day() != tm.Day){
     tm.Day = day();
     lcd.setCursor(offset, row); //offset 0, 5, 6 ou 11
@@ -1561,13 +1566,13 @@ void serialOutputOnOff(TurnOnOff_t *output){
   Serial.print(output->onHour);
   printDigits(output->onMinute);
   printDigits(output->onSecond);
-  Serial.println("");
+  Serial.println();
 
   Serial.print("Off: ");
   Serial.print(output->offHour);
   printDigits(output->offMinute);
   printDigits(output->offSecond);
-  Serial.println("");
+  Serial.println();
   
   Serial.print("Days: ");
   for(int i = 0; i < 7; i++){
@@ -1576,7 +1581,7 @@ void serialOutputOnOff(TurnOnOff_t *output){
       Serial.print(" ");
     }
   }
-  Serial.println("");
+  Serial.println();
 }
 void printDigits(int digits){
   Serial.print(":");
