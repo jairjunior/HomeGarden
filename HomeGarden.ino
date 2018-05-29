@@ -4,10 +4,8 @@
 #include <TimeLib.h>          //Tempo
 #include <DS1307RTC.h>        //RTC DS1307
 
-
 // Flag para habilitar depuração via Monitor Serial da Arduino IDE
 #define DEBUG false
-
 
 // Estrutura p/ armazenar horário e dias para ligar/desligar coisas
 // São 14 bytes para armazenamento
@@ -266,6 +264,15 @@ void loop(){
     updateScreenTime(tCol, tRow, defaultPrintConfigs);
     updateScreenDate(dCol, dRow, defaultPrintConfigs);
     
+    breakTime(now(), tm);
+    if( tm.Hour == lights[0].onHour && 
+        tm.Minute == lights[0].onMinute &&
+        tm.Second == lights[0].onSecond &&
+        lights[0].daysOfWeek & (1 << tm.Wday) )
+      digitalWrite(lights[0].pin, HIGH);
+    if(tm.Hour == lights[0].offHour && tm.Minute == lights[0].offMinute && tm.Second == lights[0].offSecond && lights[0].daysOfWeek & (1 << tm.Wday) )
+      digitalWrite(lights[0].pin, LOW);
+
     #if DEBUG
       time_t currentTime = RTC.get();
       if(currentTime == 0){
